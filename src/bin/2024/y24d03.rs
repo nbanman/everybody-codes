@@ -1,14 +1,12 @@
 use std::{collections::HashSet, iter::successors};
 
-use everybody_codes::{coord::Coord2, include_input};
+use everybody_codes::{coord::Coord2, inputs::get_inputs};
 
 fn main() {
-    let input1 = include_input!(24 / 03 / 1);
-    println!("1. {}", solve(input1, false));
-    let input2 = include_input!(24 / 03 / 2);
-    println!("2. {}", solve(input2, false));
-    let input3 = include_input!(24 / 03 / 3);
-    println!("3. {}", solve(input3, true));
+    let (input1, input2, input3) = get_inputs(24, 3);
+    println!("1. {}", solve(&input1, false));
+    println!("2. {}", solve(&input2, false));
+    println!("3. {}", solve(&input3, true));
 }
 
 fn solve(input: &str, diagonals: bool) -> usize {
@@ -46,10 +44,8 @@ fn solve(input: &str, diagonals: bool) -> usize {
 
 #[test]
 fn default() {
-    let input1 = include_input!(24 / 03 / 1);
-    assert_eq!(134, solve(input1, false));
-    let input2 = include_input!(24 / 03 / 2);
-    assert_eq!(2810, solve(input2, false));
-    let input3 = include_input!(24 / 03 / 3);
-    assert_eq!(10443, solve(input3, true));
+    let (input1, input2, input3) = get_inputs(24, 3);
+    assert_eq!(134, solve(&input1, false));
+    assert_eq!(2810, solve(&input2, false));
+    assert_eq!(10443, solve(&input3, true));
 }
