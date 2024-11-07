@@ -20,6 +20,9 @@ impl Coordinate for i8 {}
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct Coord<T: Coordinate, const N: usize>([T; N]);
 
+pub type Coord2 = Coord<i64, 2>;
+pub type Coord3 = Coord<i64, 3>;
+
 impl<T: Coordinate> Coord<T, 2> {
     pub fn new2d(x: T, y: T) -> Self {
         let mut contents= [T::default(); 2];
