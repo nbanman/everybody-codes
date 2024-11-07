@@ -19,27 +19,17 @@ fn solve(input: &str, diagonals: bool) -> usize {
             let y = (idx / width) as i64;
             Coord2::new2d(x, y)
         }).collect();
-    let dig = |blocks: &HashSet<Coord2>| -> HashSet<Coord2> {
-        blocks.iter()
+    let dig = |blocks: &HashSet<Coord2>| -> Option<HashSet<Coord2>> {
+        let next: HashSet<Coord2> = blocks.iter()
             .filter(|block| { 
                 block.adjacent(diagonals).iter()
                     .all(|pos| blocks.contains(pos))
-            }).cloned()
-            .collect()
+            }).copied()
+            .collect();
+        if next.is_empty() { None } else { Some(next) }
     };
-    let stages = successors(Some(blocks), |blocks| {
-        let next = dig(blocks);
-        if next.is_empty() {
-            None
-        } else {
-            Some(next)
-        }
-    });
-    stages
-        .fold(0, |count, stage| {
-            count + stage.len()
-        })
-
+    successors(Some(blocks), dig)
+        .fold(0, |count, stage| count + stage.len())
 }
 
 #[test]
