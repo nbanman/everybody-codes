@@ -49,7 +49,6 @@ fn part2(input: &str) -> usize {
             }
         }
     }
-
     symbols.into_iter().filter(|&sym| sym).count()
 }
 
