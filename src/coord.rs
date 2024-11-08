@@ -1,27 +1,47 @@
-use std::fmt::Display;
+use std::{fmt::Display, ops::Mul};
 
-use num_traits::{CheckedAdd, CheckedSub, One, Zero};
+use num_traits::{One, PrimInt, Unsigned, Zero};
 
-pub trait Coordinate: Copy+Default+CheckedAdd+CheckedSub+Display+Zero+One+Ord {}
+pub trait Coordinate: Default+PrimInt+Display+Zero+One+Mul {}
 
-impl Coordinate for usize {}
-impl Coordinate for u128 {}
-impl Coordinate for u64 {}
-impl Coordinate for u32 {}
-impl Coordinate for u16 {}
-impl Coordinate for u8 {}
-impl Coordinate for isize {}
-impl Coordinate for i128 {}
-impl Coordinate for i64 {}
-impl Coordinate for i32 {}
-impl Coordinate for i16 {}
-impl Coordinate for i8 {}
+impl<T> Coordinate for T
+where 
+    T: Default+PrimInt+Display+Zero+One+Mul,
+    {}
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct Coord<T: Coordinate, const N: usize>([T; N]);
 
 pub type Coord2 = Coord<i64, 2>;
 pub type Coord3 = Coord<i64, 3>;
+
+impl<T: Coordinate, const N: usize>  Coord<T, N> {
+    pub fn x(&self) -> T { self.0[0] }
+}
+
+impl<T: Coordinate+Unsigned, const N: usize>  Coord<T, N> {
+    pub fn get_index(&self, dimensions: &[usize]) -> Option<usize> {
+        let mut usized = Vec::with_capacity(N);
+        for n in self.0 {
+            let as_usize = n.to_usize()?;
+            usized.push(as_usize);
+        }
+
+        let mut multipliers = Vec::with_capacity(N);
+        let mut acc = 1;
+        multipliers.push(acc);
+        for &dim in dimensions {
+            acc *= dim;
+            multipliers.push(acc);
+        }
+
+        let index = usized.into_iter()
+            .zip(multipliers.into_iter())
+            .map(|(xyz, multiplier)| xyz * multiplier)
+            .sum();
+        Some(index)
+    }
+}
 
 impl<T: Coordinate> Coord<T, 2> {
     pub fn new2d(x: T, y: T) -> Self {
@@ -31,7 +51,6 @@ impl<T: Coordinate> Coord<T, 2> {
         Self(contents)
     }
 
-    pub fn x(&self) -> T { self.0[0] }
     pub fn y(&self) -> T { self.0[1] }
 
     pub fn origin() -> Self {
@@ -92,7 +111,6 @@ impl<T: Coordinate> Coord<T, 2> {
         }
         neighbors
     }
-
 }
 
 impl<T: Coordinate> Coord<T, 3> {
@@ -104,7 +122,6 @@ impl<T: Coordinate> Coord<T, 3> {
         Self(contents)
     }
 
-    pub fn x(&self) -> T { self.0[0] }
     pub fn y(&self) -> T { self.0[1] }
     pub fn z(&self) -> T { self.0[1] }
 
