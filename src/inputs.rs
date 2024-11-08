@@ -10,7 +10,6 @@ pub fn get_inputs(year: u16, day: u8) -> (String, String, String) {
             let mut path = path.clone();
             path.push_str(&part.to_string());
             path.push_str(".txt");
-            println!("{path}");
             let mut file = File::open(&path).unwrap();
             let mut contents = String::new();
             file.read_to_string(&mut contents).unwrap();
