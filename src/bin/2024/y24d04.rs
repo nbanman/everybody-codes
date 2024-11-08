@@ -15,7 +15,8 @@ fn lowest(nails: &Vec<usize>) -> usize {
 }
 
 fn least(nails: &Vec<usize>) -> usize {
-    nails[nails.len() / 2]
+    let nails: Vec<_> = nails.iter().sorted().collect();
+    *nails[nails.len() / 2]
 }
 
 fn solve<F>(input: &str, get_target: F) -> usize 
@@ -24,7 +25,6 @@ where
 {
     let nails: Vec<usize> = input.lines()
         .map(|line| line.parse::<usize>().unwrap())
-        .sorted()
         .collect();
     let target = get_target(&nails);
     
