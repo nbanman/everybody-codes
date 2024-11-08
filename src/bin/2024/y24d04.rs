@@ -1,5 +1,3 @@
-use std::usize;
-
 use everybody_codes::inputs::get_inputs;
 
 fn main() {
