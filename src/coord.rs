@@ -1,4 +1,4 @@
-use std::{fmt::Display, ops::Mul};
+use std::{fmt::Display, ops::{Add, Div, Mul, Sub}};
 
 use num_traits::{One, PrimInt, Unsigned, Zero};
 
@@ -17,6 +17,86 @@ pub type Coord3 = Coord<i64, 3>;
 
 impl<T: Coordinate, const N: usize>  Coord<T, N> {
     pub fn x(&self) -> T { self.0[0] }
+
+    pub fn manhattan_distance(&self, other: Self) -> usize {
+        self.0.iter()
+            .zip(other.0.iter())
+            .map(|(&a, &b)| {
+                match a.checked_sub(&b) {
+                    Some(val) => {
+                        if val < T::zero() { b - a } else { val }
+                    },
+                    None => b - a,
+                }
+            }).reduce(|acc, n| acc + n) 
+            .unwrap() 
+            .to_usize()
+            .unwrap()
+    }
+
+    pub fn checked_add(&self, v: &Self) -> Option<Self> {
+        let mut sum = self.0.clone();
+        for idx in 0usize..N {
+            sum[idx] = sum[idx].checked_add(&v.0[idx])?;
+        }
+        Some(Self(sum))
+    }
+
+    pub fn checked_sub(&self, v: &Self) -> Option<Self> {
+        let mut sum = self.0.clone();
+        for idx in 0usize..N {
+            sum[idx] = sum[idx].checked_sub(&v.0[idx])?;
+        }
+        Some(Self(sum))
+    }
+}
+
+impl<T: Coordinate, const N: usize> Add for Coord<T, N> {
+    type Output = Self;
+    
+    fn add(self, rhs: Self) -> Self::Output {
+        let mut sum = self.0.clone();
+        for idx in 0usize..N {
+            sum[idx] = sum[idx] + rhs.0[idx];
+        }
+        Self(sum)
+    }
+}
+
+impl<T: Coordinate, const N: usize> Sub for Coord<T, N> {
+    type Output = Self;
+    
+    fn sub(self, rhs: Self) -> Self::Output {
+        let mut sum = self.0.clone();
+        for idx in 0usize..N {
+            sum[idx] = sum[idx] - rhs.0[idx];
+        }
+        Self(sum)
+    }
+}
+
+impl<T: Coordinate, const N: usize> Mul for Coord<T, N> {
+    type Output = Self;
+    
+    fn mul(self, rhs: Self) -> Self::Output {
+        let mut sum = self.0.clone();
+        for idx in 0usize..N {
+            sum[idx] = sum[idx] * rhs.0[idx];
+        }
+        Self(sum)
+    }
+}
+
+impl<T: Coordinate, const N: usize> Div for Coord<T, N> {
+    type Output = Self;
+    
+    fn div(self, rhs: Self) -> Self::Output {
+        let mut sum = self.0.clone();
+        for idx in 0usize..N {
+            sum[idx] = sum[idx] / rhs.0[idx];
+        }
+        Self(sum)
+    }
 }
 
 impl<T: Coordinate+Unsigned, const N: usize>  Coord<T, N> {
@@ -146,4 +226,52 @@ impl<T: Coordinate> Ord for Coord<T, 2> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.y().cmp(&other.y()).then_with(|| self.x().cmp(&other.x()))
     }
+}
+
+#[test]
+fn unsigned_math_operations() {
+    // unsigned 2d
+    let pos1 = Coord::new2d(4usize, 7);
+    let pos2 = Coord::new2d(3usize, 6);
+    assert_eq!(Coord::new2d(7, 13), pos1 + pos2);
+    assert_eq!(Coord::new2d(1, 1), pos1 - pos2);
+    assert_eq!(None, pos2.checked_sub(&pos1));
+    assert_eq!(Some(Coord::new2d(1, 1)), pos1.checked_sub(&pos2));
+    assert_eq!(Coord::new2d(12, 42), pos1 * pos2);
+    assert_eq!(Coord::new2d(1, 1), pos1 / pos2);
+    assert_eq!(2, pos1.manhattan_distance(pos2));
+    // unsigned 3d
+    let pos1 = Coord::new3d(4usize, 7, 9);
+    let pos2 = Coord::new3d(3usize, 6, 3);
+    assert_eq!(Coord::new3d(7, 13, 12), pos1 + pos2);
+    assert_eq!(Coord::new3d(1, 1, 6), pos1 - pos2);
+    assert_eq!(None, pos2.checked_sub(&pos1));
+    assert_eq!(Some(Coord::new3d(1, 1, 6)), pos1.checked_sub(&pos2));
+    assert_eq!(Coord::new3d(12, 42, 27), pos1 * pos2);
+    assert_eq!(Coord::new3d(1, 1, 3), pos1 / pos2);
+    assert_eq!(8, pos1.manhattan_distance(pos2));
+}
+
+#[test]
+fn signed_math_operations() {
+    // unsigned 2d
+    let pos1 = Coord::new2d(-4isize, 7);
+    let pos2 = Coord::new2d(3isize, -6);
+    assert_eq!(Coord::new2d(-1, 1), pos1 + pos2);
+    assert_eq!(Coord::new2d(-7, 13), pos1 - pos2);
+    assert_eq!(Some(Coord::new2d(7, -13)), pos2.checked_sub(&pos1));
+    assert_eq!(Some(Coord::new2d(-7, 13)), pos1.checked_sub(&pos2));
+    assert_eq!(Coord::new2d(-12, -42), pos1 * pos2);
+    assert_eq!(Coord::new2d(-1, -1), pos1 / pos2);
+    assert_eq!(20, pos1.manhattan_distance(pos2));
+    // unsigned 3d
+    let pos1 = Coord::new3d(-4isize, 7, -9);
+    let pos2 = Coord::new3d(3isize, -6, 3);
+    assert_eq!(Coord::new3d(-1, 1, -6), pos1 + pos2);
+    assert_eq!(Coord::new3d(-7, 13, -12), pos1 - pos2);
+    assert_eq!(Some(Coord::new3d(7, -13, 12)), pos2.checked_sub(&pos1));
+    assert_eq!(Some(Coord::new3d(-7, 13, -12)), pos1.checked_sub(&pos2));
+    assert_eq!(Coord::new3d(-12, -42, -27), pos1 * pos2);
+    assert_eq!(Coord::new3d(-1, -1, -3), pos1 / pos2);
+    assert_eq!(32, pos1.manhattan_distance(pos2));
 }
