@@ -5,33 +5,33 @@ use itertools::Itertools;
 
 fn main() {
     let (input1, input2, input3) = get_inputs(24, 4);
-    println!("1. {}", lowest(&input1));
-    println!("2. {}", lowest(&input2));
-    println!("3. {}", least(&input3));
+    println!("1. {}", solve(&input1, lowest));
+    println!("2. {}", solve(&input2, lowest));
+    println!("3. {}", solve(&input3, least));
 }
 
-fn lowest(input: &str) -> usize {
-    let nails: Vec<usize> = input.lines()
-        .map(|line| line.parse().unwrap())
-        .collect();
-    let &smallest = nails.iter().min().unwrap();
-    nails.into_iter()
-        .map(|nail| nail - smallest)
-        .sum()
+fn lowest(nails: &Vec<usize>) -> usize {
+    *nails.iter().min().unwrap()
 }
 
-fn least(input: &str) -> usize {
+fn least(nails: &Vec<usize>) -> usize {
+    nails[nails.len() / 2]
+}
+
+fn solve<F>(input: &str, get_target: F) -> usize 
+where
+    F: FnOnce(&Vec<usize>) -> usize,
+{
     let nails: Vec<usize> = input.lines()
         .map(|line| line.parse::<usize>().unwrap())
         .sorted()
         .collect();
-    let target = nails[nails.len() / 2];
+    let target = get_target(&nails);
     
     nails.into_iter()
         .map(|nail| target.abs_diff(nail))
         .sum()
 }
-
 
 #[test]
 fn examples() {
@@ -44,6 +44,6 @@ fn examples() {
 5
 6
 8";
-    assert_eq!(10, lowest(&test1));
-    assert_eq!(8, least(&test3));
+    assert_eq!(10, solve(&test1, lowest));
+    assert_eq!(8, solve(&test3, least));
 }
