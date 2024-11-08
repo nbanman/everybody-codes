@@ -1,7 +1,6 @@
 use std::usize;
 
 use everybody_codes::inputs::get_inputs;
-use itertools::Itertools;
 
 fn main() {
     let (input1, input2, input3) = get_inputs(24, 4);
@@ -10,23 +9,23 @@ fn main() {
     println!("3. {}", solve(&input3, least));
 }
 
-fn lowest(nails: &Vec<usize>) -> usize {
+fn lowest(nails: &mut Vec<usize>) -> usize {
     *nails.iter().min().unwrap()
 }
 
-fn least(nails: &Vec<usize>) -> usize {
-    let nails: Vec<_> = nails.iter().sorted().collect();
-    *nails[nails.len() / 2]
+fn least(nails: &mut Vec<usize>) -> usize {
+    nails.sort_unstable();
+    nails[nails.len() / 2]
 }
 
 fn solve<F>(input: &str, get_target: F) -> usize 
 where
-    F: FnOnce(&Vec<usize>) -> usize,
+    F: FnOnce(&mut Vec<usize>) -> usize,
 {
-    let nails: Vec<usize> = input.lines()
+    let mut nails: Vec<usize> = input.lines()
         .map(|line| line.parse::<usize>().unwrap())
         .collect();
-    let target = get_target(&nails);
+    let target = get_target(&mut nails);
     
     nails.into_iter()
         .map(|nail| target.abs_diff(nail))
