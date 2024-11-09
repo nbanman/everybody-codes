@@ -21,7 +21,7 @@ fn parse_input(input: &str) -> (usize, Vec<VecDeque<usize>>) {
     (number_of_columns, columns)
 }
 
-fn play_round(round: usize, number_of_columns: usize, columns: &mut Vec<VecDeque<usize>>) -> String {
+fn play_round(round: usize, number_of_columns: usize, columns: &mut [VecDeque<usize>]) -> String {
     let clapper_col = (round - 1) % number_of_columns;
     let next_col = round % number_of_columns;
     let next_len = columns[next_col].len();

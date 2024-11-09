@@ -218,7 +218,7 @@ impl<T: Coordinate> Display for Coord<T, 2> {
 
 impl<T: Coordinate> PartialOrd for Coord<T, 2> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.y().cmp(&other.y()).then_with(|| self.x().cmp(&other.x())))
+        Some(std::cmp::Ord::cmp(self, other))
     }
 }
 

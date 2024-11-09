@@ -7,18 +7,18 @@ fn main() {
     println!("3. {}", solve(&input3, least));
 }
 
-fn lowest(nails: &mut Vec<usize>) -> usize {
+fn lowest(nails: &mut[usize]) -> usize {
     *nails.iter().min().unwrap()
 }
 
-fn least(nails: &mut Vec<usize>) -> usize {
+fn least(nails: &mut[usize]) -> usize {
     nails.sort_unstable();
     nails[nails.len() / 2]
 }
 
 fn solve<F>(input: &str, get_target: F) -> usize 
 where
-    F: FnOnce(&mut Vec<usize>) -> usize,
+    F: FnOnce(&mut[usize]) -> usize,
 {
     let mut nails: Vec<usize> = input.lines()
         .map(|line| line.parse::<usize>().unwrap())

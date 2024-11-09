@@ -42,8 +42,8 @@ fn part2(input: &str) -> usize {
             if snippet.len() < length { continue; }
             snippet = &snippet[..length];
             if words.contains(snippet) {
-                for i in index..index + length {
-                    symbols[i] = true;
+                for symbol in symbols.iter_mut().skip(index).take(length) {
+                    *symbol = true;
                 }
                 break;
             }
