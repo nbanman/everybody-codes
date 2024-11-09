@@ -95,7 +95,7 @@ fn examples() {
 2 3 4 5
 6 7 8 9
     ".trim();
-    assert_eq!(2323, part1(test1, 10));
+    assert_eq!(2323, part1(test1));
     assert_eq!(50877075, part2(test2));
     assert_eq!(6584, part3(test2));
 }
