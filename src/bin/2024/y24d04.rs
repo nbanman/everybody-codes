@@ -41,6 +41,6 @@ fn examples() {
 5
 6
 8";
-    assert_eq!(10, solve(&test1, lowest));
-    assert_eq!(8, solve(&test3, least));
+    assert_eq!(10, solve(test1, lowest));
+    assert_eq!(8, solve(test3, least));
 }

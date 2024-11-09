@@ -132,8 +132,8 @@ fn east(
         .map(|i| {
             let x = (pos.x() + i) % (width - 1); 
             let coord = Coord::new2d(x, pos.y());
-            let index = coord.get_index(&[width]).unwrap();
-            index
+            
+            coord.get_index(&[width]).unwrap()
         }).collect();
     
     
@@ -177,9 +177,9 @@ THERE IS THE END";
 HELWORLT
 ENIGWDXL
 TRODEOAL";
-    assert_eq!(4, part1(&test1));
-    assert_eq!(37, part2(&test2));
-    assert_eq!(10, part3(&test3));
+    assert_eq!(4, part1(test1));
+    assert_eq!(37, part2(test2));
+    assert_eq!(10, part3(test3));
 }
 
 #[test]

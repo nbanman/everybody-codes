@@ -35,7 +35,7 @@ impl<T: Coordinate, const N: usize>  Coord<T, N> {
     }
 
     pub fn checked_add(&self, v: &Self) -> Option<Self> {
-        let mut sum = self.0.clone();
+        let mut sum = self.0;
         for idx in 0usize..N {
             sum[idx] = sum[idx].checked_add(&v.0[idx])?;
         }
@@ -43,7 +43,7 @@ impl<T: Coordinate, const N: usize>  Coord<T, N> {
     }
 
     pub fn checked_sub(&self, v: &Self) -> Option<Self> {
-        let mut sum = self.0.clone();
+        let mut sum = self.0;
         for idx in 0usize..N {
             sum[idx] = sum[idx].checked_sub(&v.0[idx])?;
         }
@@ -55,7 +55,7 @@ impl<T: Coordinate, const N: usize> Add for Coord<T, N> {
     type Output = Self;
     
     fn add(self, rhs: Self) -> Self::Output {
-        let mut sum = self.0.clone();
+        let mut sum = self.0;
         for idx in 0usize..N {
             sum[idx] = sum[idx] + rhs.0[idx];
         }
@@ -67,7 +67,7 @@ impl<T: Coordinate, const N: usize> Sub for Coord<T, N> {
     type Output = Self;
     
     fn sub(self, rhs: Self) -> Self::Output {
-        let mut sum = self.0.clone();
+        let mut sum = self.0;
         for idx in 0usize..N {
             sum[idx] = sum[idx] - rhs.0[idx];
         }
@@ -79,7 +79,7 @@ impl<T: Coordinate, const N: usize> Mul for Coord<T, N> {
     type Output = Self;
     
     fn mul(self, rhs: Self) -> Self::Output {
-        let mut sum = self.0.clone();
+        let mut sum = self.0;
         for idx in 0usize..N {
             sum[idx] = sum[idx] * rhs.0[idx];
         }
@@ -91,7 +91,7 @@ impl<T: Coordinate, const N: usize> Div for Coord<T, N> {
     type Output = Self;
     
     fn div(self, rhs: Self) -> Self::Output {
-        let mut sum = self.0.clone();
+        let mut sum = self.0;
         for idx in 0usize..N {
             sum[idx] = sum[idx] / rhs.0[idx];
         }
@@ -116,7 +116,7 @@ impl<T: Coordinate+Unsigned, const N: usize>  Coord<T, N> {
         }
 
         let index = usized.into_iter()
-            .zip(multipliers.into_iter())
+            .zip(multipliers)
             .map(|(xyz, multiplier)| xyz * multiplier)
             .sum();
         Some(index)

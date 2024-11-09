@@ -25,7 +25,7 @@ fn solve(input: &str, group_size: usize) -> usize {
                     _ => 0,
                 }
             };
-            let potions: usize = baddies.iter().map(|baddie| value(baddie)).sum();
+            let potions: usize = baddies.iter().map(value).sum();
             let bonus_potions: usize = number_of_baddies * 
                 number_of_baddies.checked_sub(1).unwrap_or_default();
             potions + bonus_potions

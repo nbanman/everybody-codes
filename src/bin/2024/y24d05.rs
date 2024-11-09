@@ -10,10 +10,10 @@ fn main() {
 }
 
 fn parse_input(input: &str) -> (usize, Vec<VecDeque<usize>>) {
-    let number_of_columns = 1 + input.as_bytes().into_iter()
+    let number_of_columns = 1 + input.as_bytes().iter()
         .take_while(|&&c| c != b'\n')
         .filter(|&&c| c == b' ')
-        .count();
+        .count(); 
     let mut columns = vec![VecDeque::new(); number_of_columns];
     for (idx, n) in input.get_numbers::<usize>().enumerate() {
         columns[idx % number_of_columns].push_back(n);
@@ -95,7 +95,7 @@ fn examples() {
 2 3 4 5
 6 7 8 9
     ".trim();
-    assert_eq!(2323, part1(&test1, 10));
-    assert_eq!(50877075, part2(&test2));
-    assert_eq!(6584, part3(&test2));
+    assert_eq!(2323, part1(test1, 10));
+    assert_eq!(50877075, part2(test2));
+    assert_eq!(6584, part3(test2));
 }

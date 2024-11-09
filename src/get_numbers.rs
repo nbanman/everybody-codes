@@ -13,15 +13,13 @@ pub fn get_numbers<N: PrimInt+FromStr>(s: &str) -> Vec<N> {
             if start_position == -1 {
                 start_position = position
             }
-        } else {
-            if start_position != -1 {
-                if let Ok(sub_str) = std::str::from_utf8(&s[start_position as usize..position as usize]) {
-                    if let Ok(parsed) = sub_str.parse::<N>() {
-                        numbers.push(parsed);
-                    }
+        } else if start_position != -1 {
+            if let Ok(sub_str) = std::str::from_utf8(&s[start_position as usize..position as usize]) {
+                if let Ok(parsed) = sub_str.parse::<N>() {
+                    numbers.push(parsed);
                 }
-                start_position = -1;
             }
+            start_position = -1;
         }
     }
     if start_position != -1 {
@@ -64,17 +62,15 @@ impl<'a, N: PrimInt+FromStr> Iterator for NumberIterator<'a, N> {
                 if self.start_position == -1 {
                     self.start_position = self.position;
                 }
-            } else {
-                if self.start_position != -1 {
-                    if let Ok(sub_str) =
-                        std::str::from_utf8(&self.s[self.start_position as usize..self.position as usize]) {
-                        if let Ok(parsed) = sub_str.parse::<N>() {
-                            self.start_position = -1;
-                            self.position += 1;
-                            return Some(parsed);
-                        } else {
-                            self.start_position = -1;
-                        }
+            } else if self.start_position != -1 {
+                if let Ok(sub_str) =
+                    std::str::from_utf8(&self.s[self.start_position as usize..self.position as usize]) {
+                    if let Ok(parsed) = sub_str.parse::<N>() {
+                        self.start_position = -1;
+                        self.position += 1;
+                        return Some(parsed);
+                    } else {
+                        self.start_position = -1;
                     }
                 }
             }
