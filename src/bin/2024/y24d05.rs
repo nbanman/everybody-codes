@@ -4,7 +4,7 @@ use everybody_codes::{get_numbers::ContainsNumbers, inputs::get_inputs};
 
 fn main() {
     let (input1, input2, input3) = get_inputs(24, 5);
-    println!("1. {}", part1(&input1, 10));
+    println!("1. {}", part1(&input1));
     println!("2. {}", part2(&input2));
     println!("3. {}", part3(&input3));
 }
@@ -38,12 +38,12 @@ fn play_round(round: usize, number_of_columns: usize, columns: &mut Vec<VecDeque
         }).collect::<String>()
 }
 
-fn part1(input: &str, rounds: usize) -> usize {
+fn part1(input: &str) -> usize {
     let (number_of_columns, mut columns) = parse_input(input);
-    for round in 1..rounds {
+    for round in 1..10 {
         play_round(round, number_of_columns, &mut columns);
     }
-    play_round(rounds, number_of_columns, &mut columns)
+    play_round(10, number_of_columns, &mut columns)
         .parse()
         .unwrap()
 }
