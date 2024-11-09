@@ -1,4 +1,4 @@
-use std::collections::{HashSet, VecDeque};
+use std::{cmp::min, collections::{HashSet, VecDeque}};
 
 use everybody_codes::{get_numbers::ContainsNumbers, inputs::get_inputs};
 
@@ -26,9 +26,9 @@ fn play_round(round: usize, number_of_columns: usize, columns: &mut Vec<VecDeque
     let next_col = round % number_of_columns;
     let next_len = columns[next_col].len();
     let clapper = columns[clapper_col].pop_front().unwrap();  
-    let on_right = ((clapper - 1) / next_len) & 1 == 1;
-    let mut pos = (clapper - 1) % next_len;
-    if on_right { pos = next_len - pos; }
+    let pos = (clapper - 1) % (next_len * 2);
+    let pos = min(pos, next_len) - pos.checked_sub(next_len).unwrap_or_default();
+    
     columns[next_col].insert(pos, clapper);
     
     columns.iter()
