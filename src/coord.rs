@@ -1,5 +1,6 @@
 use std::{fmt::Display, ops::{Add, Div, Mul, Sub}};
 
+use itertools::Itertools;
 use num_traits::{One, PrimInt, Unsigned, Zero};
 
 pub trait Coordinate: Default+PrimInt+Display+Zero+One+Mul {}
@@ -16,6 +17,10 @@ pub type Coord2 = Coord<i64, 2>;
 pub type Coord3 = Coord<i64, 3>;
 
 impl<T: Coordinate, const N: usize>  Coord<T, N> {
+    pub fn new(coordinates: [T; N]) -> Self {
+        Coord(coordinates)
+    }
+
     pub fn x(&self) -> T { self.0[0] }
 
     pub fn manhattan_distance(&self, other: Self) -> usize {
@@ -96,6 +101,15 @@ impl<T: Coordinate, const N: usize> Div for Coord<T, N> {
             sum[idx] = sum[idx] / rhs.0[idx];
         }
         Self(sum)
+    }
+}
+
+impl<T: Coordinate, const N: usize> Display for Coord<T, N> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let output = self.0.iter()
+            .map(|pos| pos.to_string())
+            .join(", ");
+        write!(f, "({})", output)
     }
 }
 
@@ -207,12 +221,6 @@ impl<T: Coordinate> Coord<T, 3> {
 
     pub fn origin() -> Self {
         Self([T::default(); 3])
-    }
-}
-
-impl<T: Coordinate> Display for Coord<T, 2> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "({}, {})", self.x(), self.y())
     }
 }
 
