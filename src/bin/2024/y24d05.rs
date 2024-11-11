@@ -31,9 +31,11 @@ fn play_round(round: usize, columns: &mut Formation) {
 }
 
 fn shout(columns: &Formation) -> usize {
-    format!("{}{}{}{}", columns[0][0], columns[1][0], columns[2][0], columns[3][0])
-        .parse()
-        .unwrap()
+    let shout = columns.iter().fold(0usize, |acc, column| {
+        let front = column[0];
+        acc * 10usize.pow((front as f64).log10().floor() as u32 + 1) + front
+    });
+    shout
 }
 
 fn part1(input: &str) -> usize {
