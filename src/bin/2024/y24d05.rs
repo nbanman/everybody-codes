@@ -1,6 +1,8 @@
-use std::{cmp::min, collections::{HashSet, VecDeque}};
-
+use std::{array::from_fn, cmp::min, collections::HashSet};
 use everybody_codes::{get_numbers::ContainsNumbers, inputs::get_inputs};
+
+const NUMBER_OF_COLUMNS: usize = 4;
+type Formation = [Vec<usize>; NUMBER_OF_COLUMNS];
 
 fn main() {
     let (input1, input2, input3) = get_inputs(24, 5);
@@ -9,54 +11,48 @@ fn main() {
     println!("3. {}", part3(&input3));
 }
 
-fn parse_input(input: &str) -> (usize, Vec<VecDeque<usize>>) {
-    let number_of_columns = 1 + input.as_bytes().iter()
-        .take_while(|&&c| c != b'\n')
-        .filter(|&&c| c == b' ')
-        .count(); 
-    let mut columns = vec![VecDeque::new(); number_of_columns];
+fn parse_input(input: &str) -> Formation {
+    let mut columns = from_fn(|_| Vec::new());
     for (idx, n) in input.get_numbers::<usize>().enumerate() {
-        columns[idx % number_of_columns].push_back(n);
+        columns[idx % 4].push(n);
     }
-    (number_of_columns, columns)
+    columns
 }
 
-fn play_round(round: usize, number_of_columns: usize, columns: &mut [VecDeque<usize>]) -> String {
-    let clapper_col = (round - 1) % number_of_columns;
-    let next_col = round % number_of_columns;
+fn play_round(round: usize, columns: &mut Formation) {
+    let clapper_col = (round - 1) % NUMBER_OF_COLUMNS;
+    let next_col = round % NUMBER_OF_COLUMNS;
     let next_len = columns[next_col].len();
-    let clapper = columns[clapper_col].pop_front().unwrap();  
+    let clapper = columns[clapper_col].remove(0);  
     let pos = (clapper - 1) % (next_len * 2);
     let pos = min(pos, next_len) - pos.checked_sub(next_len).unwrap_or_default();
     
     columns[next_col].insert(pos, clapper);
-    
-    columns.iter()
-        .map(|column| { 
-            let number = *column.front().unwrap();
-            number.to_string()
-        }).collect::<String>()
 }
 
-fn part1(input: &str) -> usize {
-    let (number_of_columns, mut columns) = parse_input(input);
-    for round in 1..10 {
-        play_round(round, number_of_columns, &mut columns);
-    }
-    play_round(10, number_of_columns, &mut columns)
+fn shout(columns: &Formation) -> usize {
+    format!("{}{}{}{}", columns[0][0], columns[1][0], columns[2][0], columns[3][0])
         .parse()
         .unwrap()
 }
 
+fn part1(input: &str) -> usize {
+    let mut columns = parse_input(input);
+    for round in 1..=10 {
+        play_round(round, &mut columns);
+    }
+    shout(&columns)
+}
 
 fn part2(input: &str) -> usize {
-    let (number_of_columns, mut columns) = parse_input(input);
+    let mut columns = parse_input(input);
     let digits = input.lines().next().unwrap().chars()
         .filter(|&c| c.is_ascii_digit())
         .count();
     let mut counter = vec![0usize; 10usize.pow(digits as u32)];
     for round in 1.. {
-        let shouted: usize = play_round(round, number_of_columns, &mut columns).parse().unwrap();
+        play_round(round, &mut columns);
+        let shouted = shout(&columns);
         counter[shouted] += 1;
         if counter[shouted] == 2024 {
             return round * shouted
@@ -66,19 +62,16 @@ fn part2(input: &str) -> usize {
 }
 
 fn part3(input: &str) -> usize {
-    let (number_of_columns, mut columns) = parse_input(input);
+    let mut columns = parse_input(input);
     let mut cache = HashSet::new();
     let mut highest_number = 0;
     for round in 1.. {
-        let shouted: usize = play_round(round, number_of_columns, &mut columns).parse().unwrap();
-        let state: String = columns.iter()
-            .flat_map(|column| {
-                column.iter().map(|n| n.to_string())
-            }).collect();
-        if !cache.insert(state) {
+        play_round(round, &mut columns);
+        let shouted = shout(&columns);
+        if highest_number < shouted { highest_number = shouted; }
+        if !cache.insert(columns.clone()) {
             return highest_number;
         }
-        if highest_number < shouted { highest_number = shouted; }
     }
     unreachable!()
 }
