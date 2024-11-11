@@ -2,4 +2,4 @@
 /inputs
 .DS_Store
 *.svg
-perf.data
+perf.data*
