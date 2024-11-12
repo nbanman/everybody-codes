@@ -87,5 +87,4 @@ H:@
     ".trim();
     assert_eq!("RRB@".to_string(), solve(test1, false));
     assert_eq!("RB@", solve(test1, true));
-    // assert_eq!(6584, part3(test2));
 }
