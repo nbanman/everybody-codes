@@ -65,10 +65,10 @@ fn get_paths(truncate: bool, branches: HashMap<&str, Vec<&str>>) -> Vec<String> 
 fn get_strongest(paths: Vec<String>) -> String {
     paths.iter()
         .into_group_map_by(|&s| s.len())
-        .iter()
-        .find(|(_, paths)| paths.len() == 1)
-        .unwrap()
-        .1[0]
+        .values()
+        .find(|paths| paths.len() == 1)
+        .expect("All values have a matching length value.")
+        [0]
         .to_string()
 }
 
