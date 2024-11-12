@@ -12,7 +12,7 @@ pub fn get_inputs(year: u16, day: u8) -> (String, String, String) {
 
 pub fn get_input(year: u16, day: u8, part: u8) -> String {
     let path = 
-        format!("./inputs/everybody_codes_e20{}_q{}_p{}.txt", year, day, part);
+        format!("./inputs/everybody_codes_e20{}_q{:02}_p{}.txt", year, day, part);
     let mut file = File::open(&path).unwrap();
     let mut contents = String::new();
     file.read_to_string(&mut contents).unwrap();
