@@ -55,7 +55,6 @@ fn get_paths(truncate: bool, branches: HashMap<&str, Vec<&str>>) -> Vec<String> 
         } else {
             if let Some(children) = branches.get(current) {
                 for child in children {
-                    // if path.contains(child) { continue; }
                     let mut new_path = path.clone();
                     new_path.push(child);
                     q.push(new_path);
