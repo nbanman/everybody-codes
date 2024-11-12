@@ -12,7 +12,7 @@ fn main() {
     println!("1. {} ({})", solve(&input1, false), stopwatch.lap().report());
     println!("2. {} ({})", solve(&input2, true), stopwatch.lap().report());
     println!("3. {} ({})", solve(&input3, true), stopwatch.lap().report());
-    println!("Total: {}", stopwatch.stop().report());
+    println!("Total: {}", stopwatch);
 }
 
 fn solve(input: &str, truncate: bool) -> String {
