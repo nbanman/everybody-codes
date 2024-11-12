@@ -1,14 +1,18 @@
 use std::collections::HashMap;
-use everybody_codes::inputs::get_inputs;
+use everybody_codes::{inputs::get_inputs, stopwatch::Stopwatch};
 use itertools::Itertools;
 
 type Branches<'a> = HashMap<&'a str, Vec<&'a str>>;
 
 fn main() {
+    let mut stopwatch = Stopwatch::new();
+    stopwatch.start();
     let (input1, input2, input3) = get_inputs(24, 6);
-    println!("1. {}", solve(&input1, false));
-    println!("2. {}", solve(&input2, true));
-    println!("3. {}", solve(&input3, true));
+    println!("Inputs loaded ({})", stopwatch.lap().report());
+    println!("1. {} ({})", solve(&input1, false), stopwatch.lap().report());
+    println!("2. {} ({})", solve(&input2, true), stopwatch.lap().report());
+    println!("3. {} ({})", solve(&input3, true), stopwatch.lap().report());
+    println!("Total: {}", stopwatch.stop().report());
 }
 
 fn solve(input: &str, truncate: bool) -> String {
