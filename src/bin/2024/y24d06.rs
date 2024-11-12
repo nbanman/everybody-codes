@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use everybody_codes::{inputs::get_inputs, stopwatch::Stopwatch};
+use everybody_codes::{inputs::get_inputs, stopwatch::{ReportDuration, Stopwatch}};
 use itertools::Itertools;
 
 type Branches<'a> = HashMap<&'a str, Vec<&'a str>>;

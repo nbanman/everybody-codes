@@ -1,16 +1,11 @@
-use std::{ops::Deref, time::{Duration, Instant}};
+use std::time::{Duration, Instant};
 
-pub struct StopDuration(Duration);
-
-impl Deref for StopDuration {
-    type Target = Duration;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
+pub trait ReportDuration {
+    fn report(&self) -> String;
 }
 
-impl StopDuration {
-    pub fn report(&self) -> String {
+impl ReportDuration for Duration {
+    fn report(&self) -> String {
         let seconds = self.as_secs();
         if seconds > 0 {
             format!("{seconds}.{:.2}", self.as_millis())
@@ -49,24 +44,24 @@ impl Stopwatch {
         }
     }
 
-    pub fn stop(&mut self) -> StopDuration {
+    pub fn stop(&mut self) -> Duration {
         if self.is_running {
             let now = Instant::now();
             self.is_running = false;
             self.elapsed += now - self.last_start.unwrap();
         }
-        StopDuration(self.elapsed)
+        self.elapsed
     }
 
-    pub fn lap(&mut self) -> StopDuration {
+    pub fn lap(&mut self) -> Duration {
         if self.is_running {
             let now = Instant::now();
             let lap = now - self.last_start.unwrap();
             self.elapsed += lap;
             self.last_start = Some(now);
-            StopDuration(lap)
+            lap
         } else {
-            StopDuration(Duration::ZERO)
+            Duration::ZERO
         }
     }
 
