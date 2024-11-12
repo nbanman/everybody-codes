@@ -19,11 +19,12 @@ fn solve(input: &str, truncate: bool) -> String {
 
 fn get_branches(input: &str) -> Branches {
     input.lines()
+        .filter(|line| {
+            let possible_pest = &line[0..3];
+            possible_pest != "ANT" && possible_pest != "BUG"
+        })
         .map(|line| {
-            let (parent, children) = line
-                .split(':')
-                .collect_tuple()
-                .unwrap();
+            let (parent, children) = line.split_once(':').unwrap();
             let children: Vec<&str> = children.split(',').collect();
             (parent, children)
         })
@@ -50,7 +51,7 @@ fn get_paths(truncate: bool, branches: HashMap<&str, Vec<&str>>) -> Vec<String> 
         } else {
             if let Some(children) = branches.get(current) {
                 for child in children {
-                    if path.contains(child) { continue; }
+                    // if path.contains(child) { continue; }
                     let mut new_path = path.clone();
                     new_path.push(child);
                     q.push(new_path);
