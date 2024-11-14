@@ -3,6 +3,8 @@ use std::{fmt::Display, ops::{Add, Div, Mul, Sub}};
 use itertools::Itertools;
 use num_traits::{One, PrimInt, Unsigned, Zero};
 
+use crate::cardinals::Cardinal;
+
 pub trait Coordinate: Default+PrimInt+Display+Zero+One+Mul {}
 
 impl<T> Coordinate for T
@@ -204,6 +206,19 @@ impl<T: Coordinate> Coord<T, 2> {
             }
         }
         neighbors
+    }
+
+    pub fn move_direction(&self, dir: Cardinal, distance: T) -> Option<Self> {
+        match dir {
+            Cardinal::North => Some(Self([self.x(), self.y().checked_sub(&distance)?])),
+            Cardinal::East => Some(Self([self.x() + distance, self.y()])),
+            Cardinal::South => Some(Self([self.x(), self.y() + distance])),
+            Cardinal::West => Some(Self([self.x().checked_sub(&distance)?, self.y()])),
+        }
+    }
+
+    pub fn destructured(&self) -> (T, T) {
+        (self.0[0], self.0[1])
     }
 }
 
