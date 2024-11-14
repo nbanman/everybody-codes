@@ -38,6 +38,10 @@ impl Cardinal {
         Self::entries()[(self.ordinal() + 1).rem_euclid(4)]
     }
 
+    pub fn straight(&self) -> Self {
+        *self
+    }
+
     pub fn flip(&self) -> Self {
         Self::entries()[(self.ordinal() + 2).rem_euclid(4)]
     }
