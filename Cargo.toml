@@ -9,6 +9,7 @@ debug = true
 [dependencies]
 itertools = "0.13.0"
 num-traits = "0.2.19"
+enum-ordinalize = "4.3.0"
 
 [[bin]]
 name = "y24d01"
@@ -33,3 +34,7 @@ path = "src/bin/2024/y24d05.rs"
 [[bin]]
 name = "y24d06"
 path = "src/bin/2024/y24d06.rs"
+
+[[bin]]
+name = "y24d07"
+path = "src/bin/2024/y24d07.rs"
