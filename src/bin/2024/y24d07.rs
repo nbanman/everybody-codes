@@ -72,15 +72,15 @@ fn traverse(
     working: &mut Vec<isize>,
     store: &mut [usize; 3],
 ) {
-    if working.len() == 11 {
-        permutations.push(working.clone());
-        return
-    }
     for value in 0..=2 {
         if store[value] > 0 {
             working.push(value as isize - 1);
             store[value] -= 1;
-            traverse(permutations, working, store);
+            if working.len() == 11 {
+                permutations.push(working.clone());
+            } else {
+                traverse(permutations, working, store);
+            }
             working.pop();
             store[value] += 1;
         }
