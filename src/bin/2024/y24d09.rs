@@ -63,6 +63,10 @@ fn trav (
             return prev_best;
         }
 
+        if beetles >= best {
+            return best;
+        }
+
         // if divides cleanly, we have our answer, update cache and pop up with it
         if remaining % stamp == 0 { // may not need first conditional
             if cache[remaining] == None {
@@ -75,9 +79,10 @@ fn trav (
         // only runs if the stamp is smaller than the remaining brightness
         for n in (1..=beetles).rev() {  
             // this should be the best obtainable with n number of stamp
-            let result = trav(
+            if best <= n { continue; }
+            let result = n + trav(
                 remaining - n * stamp,
-                best,
+                best - n, // the -n is an experiment
                 cache,
                 &stamps[idx..],
             );
@@ -94,7 +99,7 @@ fn trav (
 fn tests() {
     let tests = [r"2, 4, 7, 16", "27"];
     let stamps = [[1, 3, 5, 10], [1, 3, 9, 10]];
-    // assert_eq!(3, solve(tests[1], &stamps[1]));
+    assert_eq!(3, solve(tests[1], &stamps[1]));
     assert_eq!(10, solve(tests[0], &stamps[0]));
     // assert_eq!(9, part2(tests[1]));
     // assert_eq!(9, part3(tests[2]));
