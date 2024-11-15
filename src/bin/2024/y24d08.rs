@@ -58,7 +58,7 @@ fn tests() {
     let tests: Vec<usize> = tests.iter()
         .map(|s| s.parse().unwrap())
         .collect();
-    assert_eq!(21, solve(1, ACOLYTES, tests[0]));
-    assert_eq!(27, solve(tests[1], 5, 50));
-    assert_eq!(2, solve(tests[2], 5, 160));
+    assert_eq!(21, solve(1, ACOLYTES, tests[0], false));
+    assert_eq!(27, solve(tests[1], 5, 50, false));
+    assert_eq!(2, solve(tests[2], 5, 160, true));
 }
