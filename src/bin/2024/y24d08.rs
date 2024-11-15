@@ -1,8 +1,6 @@
 use everybody_codes::{inputs::get_inputs, stopwatch::{ReportDuration, Stopwatch}};
 use itertools::Itertools;
 
-const ACOLYTES: usize = 1111;
-
 fn main() {
     let mut stopwatch = Stopwatch::new();
     stopwatch.start();
@@ -11,8 +9,8 @@ fn main() {
     let input2 = input2.parse().unwrap();
     let input3 = input3.parse().unwrap();
     println!("Inputs loaded ({})", stopwatch.lap().report());
-    println!("1. {} ({})", solve(1, ACOLYTES, input1, false), stopwatch.lap().report());
-    println!("2. {} ({})", solve(input2, ACOLYTES, 20_240_000, false), stopwatch.lap().report());
+    println!("1. {} ({})", solve(1, 2, input1, false), stopwatch.lap().report());
+    println!("2. {} ({})", solve(input2, 1111, 20_240_000, false), stopwatch.lap().report());
     println!("3. {} ({})", solve(input3, 10, 202400000, true), stopwatch.lap().report());
     println!("Total: {}", stopwatch.stop().report());
 }
