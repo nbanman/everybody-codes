@@ -1,7 +1,6 @@
 use std::usize;
 
 use everybody_codes::{get_numbers::ContainsNumbers, inputs::get_inputs, stopwatch::{ReportDuration, Stopwatch}, try_get::TryGet};
-use itertools::Itertools;
 
 fn main() {
     let mut stopwatch = Stopwatch::new();
@@ -38,7 +37,33 @@ fn part3(input: &str) -> usize {
     let brightnesses = get_brightnesses(input);
     let &brightest = brightnesses.iter().max().unwrap();
     let mut cache: Vec<Option<usize>> = vec![None; brightest + 1];
-    
+    for stamp in stamps.iter() {
+        cache[*stamp] = Some(1);
+    }
+    brightnesses.iter()
+        .map(|brightness| {
+            let half = brightness / 2;
+            let limit = if brightness & 1 == 1 { 49 } else { 50 };
+            (0..=limit)
+                .map(|n| {
+                    let ba = half - n;
+                    let bb = (brightness - half) + n;
+                    let ba_beetles = if let Some(ba_beetles) = cache[ba] {
+                        ba_beetles
+                    } else {
+                        get_beetles(ba, usize::MAX, &mut cache, &stamps)       
+                    };
+                    let bb_beetles = if let Some(bb_beetles) = cache[bb] {
+                        bb_beetles
+                    } else {
+                        get_beetles(bb, usize::MAX, &mut cache, &stamps)       
+                    };
+                    ba_beetles + bb_beetles
+                })
+                .min()
+                .unwrap()
+        })
+        .sum()
 } 
 
 fn get_brightnesses(input: &str) -> Vec<usize> {
@@ -54,13 +79,12 @@ fn solve(brightnesses: &[usize], stamps: &[usize], cache: &mut Vec<Option<usize>
             if let Some(beetles) = cache[*brightness] {
                 beetles
             } else {
-                let beetles = get_beetles(
+                get_beetles(
                     *brightness, 
                     usize::MAX, 
                     cache, 
                     &stamps
-                );
-                beetles
+                )
             }
         })
         .sum()
