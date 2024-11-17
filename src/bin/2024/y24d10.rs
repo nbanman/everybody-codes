@@ -7,7 +7,7 @@ fn main() {
     stopwatch.start();
     let (input1, input2, input3) = get_inputs(24, 10);
     println!("Inputs loaded ({})", stopwatch.lap().report());
-    println!("1. {} ({})", part1(&input1), stopwatch.lap().report());
+    // println!("1. {} ({})", part1(&input1), stopwatch.lap().report());
     // println!("2. {} ({})", part2(&input2), stopwatch.lap().report());
     println!("3. {} ({})", part3(&input3), stopwatch.lap().report());
     println!("Total: {}", stopwatch.stop().report());
@@ -16,17 +16,6 @@ fn main() {
 fn part1(input: &str) -> String {
     let (hz, vt, length) = crosstabs(input);
     get_runes(length, &hz, &vt)
-}
-
-fn get_runes(length: usize, hz: &Vec<HashSet<char>>, vt: &Vec<HashSet<char>>) -> String {
-    let mut runes = String::new();
-    for y in 0..length {
-        for x in 0..length {
-            let &cross = hz[y].intersection(&vt[x]).next().unwrap_or(&'?');
-            runes.push(cross);
-        }
-    }
-    runes
 }
 
 fn part2(input: &str) -> usize {
@@ -51,6 +40,21 @@ fn part3(input: &str) -> usize {
             3
         })
         .sum()
+}
+
+fn get_runes(length: usize, hz: &Vec<HashSet<char>>, vt: &Vec<HashSet<char>>) -> String {
+    let mut runes = String::new();
+    for y in 0..length {
+        for x in 0..length {
+            let row = &hz[y];
+            let col = &vt[x];
+            
+            let cross = row.intersection(col).next().unwrap_or(&'?');
+            runes.push(*cross);
+        }
+    }
+    println!("{runes}\n");
+    runes
 }
 
 fn get_samples_spaced(input: &str) -> Vec<String> {
@@ -110,7 +114,7 @@ fn get_row_samples_compressed(row: &str, samples_per_row: usize) -> Vec<String> 
 }
 
 fn crosstabs(sample: &str) -> (Vec<HashSet<char>>, Vec<HashSet<char>>, usize) {
-    println!("called\n{sample}\n");
+    println!("{sample}");
     let length = sample.find(|c| c != '*').unwrap() * 2;
     let mut hz = vec![HashSet::new(); length];
     let mut vt = vec![HashSet::new(); length];
