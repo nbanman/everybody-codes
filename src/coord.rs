@@ -70,6 +70,22 @@ impl<T: Coordinate, const N: usize> Add for Coord<T, N> {
     }
 }
 
+impl<T, const N: usize> Add<T> for Coord<T, N> 
+where 
+    T: Coordinate + Add<Output = T>,
+{
+    type Output = Self;
+    
+    fn add(self, rhs: T) -> Self::Output {
+        let mut sum = self.0;
+        for idx in 0usize..N {
+            sum[idx] = sum[idx] + rhs;
+        }
+        Self(sum)
+    }
+}
+
+
 impl<T: Coordinate, const N: usize> Sub for Coord<T, N> {
     type Output = Self;
     
@@ -222,6 +238,24 @@ impl<T: Coordinate> Coord<T, 2> {
     }
 }
 
+impl<T: Coordinate> From<(T, T)> for Coord<T, 2> {
+    fn from(value: (T, T)) -> Self {
+        Self::new2d(value.0, value.1)
+    }
+}
+
+impl<T: Coordinate> PartialOrd for Coord<T, 2> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(std::cmp::Ord::cmp(self, other))
+    }
+}
+
+impl<T: Coordinate> Ord for Coord<T, 2> {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.y().cmp(&other.y()).then_with(|| self.x().cmp(&other.x()))
+    }
+}
+
 impl<T: Coordinate> Coord<T, 3> {
     pub fn new3d(x: T, y: T, z: T) -> Self {
         let mut contents= [T::default(); 3];
@@ -239,17 +273,12 @@ impl<T: Coordinate> Coord<T, 3> {
     }
 }
 
-impl<T: Coordinate> PartialOrd for Coord<T, 2> {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(std::cmp::Ord::cmp(self, other))
+impl<T: Coordinate> From<(T, T, T)> for Coord<T, 3> {
+    fn from(value: (T, T, T)) -> Self {
+        Self::new3d(value.0, value.1, value.2)
     }
 }
 
-impl<T: Coordinate> Ord for Coord<T, 2> {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.y().cmp(&other.y()).then_with(|| self.x().cmp(&other.x()))
-    }
-}
 
 #[test]
 fn unsigned_math_operations() {
