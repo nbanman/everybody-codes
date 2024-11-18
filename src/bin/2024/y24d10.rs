@@ -1,136 +1,206 @@
 use std::collections::HashSet;
 
-use everybody_codes::{inputs::get_inputs, stopwatch::{ReportDuration, Stopwatch}};
+use everybody_codes::{coord::Coord, inputs::get_inputs, stopwatch::{ReportDuration, Stopwatch}};
+use itertools::Itertools;
+
+type Pos = Coord<usize, 2>;
 
 fn main() {
     let mut stopwatch = Stopwatch::new();
     stopwatch.start();
     let (input1, input2, input3) = get_inputs(24, 10);
     println!("Inputs loaded ({})", stopwatch.lap().report());
-    // println!("1. {} ({})", part1(&input1), stopwatch.lap().report());
-    // println!("2. {} ({})", part2(&input2), stopwatch.lap().report());
-    println!("3. {} ({})", part3(&input3), stopwatch.lap().report());
+    println!("1. {} ({})", solve(&input1, |words| words[0].clone()), stopwatch.lap().report());
+    println!("2. {} ({})", solve(&input2, |words| get_power(&words)), stopwatch.lap().report());
+    println!("3. {} ({})", solve(&input3, |words| get_power(&words)), stopwatch.lap().report());
     println!("Total: {}", stopwatch.stop().report());
 }
 
-fn part1(input: &str) -> String {
-    let (hz, vt, length) = crosstabs(input);
-    get_runes(length, &hz, &vt)
+fn solve<F, T>(input: &str, output: F) -> T 
+where 
+    F: Fn(Vec<String>) -> T,
+{
+    let mut wall: Vec<Vec<u8>> = get_wall(input);
+    let samples: Vec<Sample> = get_samples(&wall);
+    deduce_runes(&mut wall, &samples);
+    let runic_words: Vec<String> = samples.into_iter()
+        .map(|sample| get_runic_word(&wall, sample))
+        .collect();
+    output(runic_words)
 }
 
-fn part2(input: &str) -> usize {
-    let samples: Vec<String> = get_samples_spaced(input);
-    samples.iter() 
-        .map(|sample| {
-            let (hz, vt, length) = crosstabs(sample);
-            let runes = get_runes(length, &hz, &vt);
-            runes.as_bytes().into_iter().enumerate()
-                .map(|(idx, &rune)| (rune as usize - 64) * (idx + 1))
-                .sum::<usize>()
+fn get_wall(input: &str) -> Vec<Vec<u8>> {
+    input.lines()
+        .filter(|line| !line.is_empty())
+        .map(|line| {
+            line.as_bytes().into_iter()
+                .filter(|&&c| c != b' ')
+                .copied()
+                .collect()
         })
-        .sum()
-}
-
-fn part3(input: &str) -> usize {
-    let samples: Vec<String> = get_samples_compressed(input);
-    samples.iter() 
-        .map(|sample| {
-            let (hz, vt, length) = crosstabs(sample);
-            let runes = get_runes(length, &hz, &vt);
-            3
-        })
-        .sum()
-}
-
-fn get_runes(length: usize, hz: &Vec<HashSet<char>>, vt: &Vec<HashSet<char>>) -> String {
-    let mut runes = String::new();
-    for y in 0..length {
-        for x in 0..length {
-            let row = &hz[y];
-            let col = &vt[x];
-            
-            let cross = row.intersection(col).next().unwrap_or(&'?');
-            runes.push(*cross);
-        }
-    }
-    println!("{runes}\n");
-    runes
-}
-
-fn get_samples_spaced(input: &str) -> Vec<String> {
-    let width = input.find('\n').unwrap() + 1;
-    let rows: Vec<&str> = input.split("\n\n").collect();
-    let samples_per_row = width / 9;
-    rows.into_iter()
-        .flat_map(|row| get_row_samples_spaced(row, samples_per_row))
         .collect()
 }
 
-fn get_row_samples_spaced(row: &str, samples_per_row: usize) -> Vec<String> {
-    let mut samples = vec![String::new(); samples_per_row];
-    for line in row.lines() {
-        for (place, c) in line.chars().enumerate() {
-            let sample_idx = place / 9;
-            let place = place % 9;
-            let sample = &mut samples[sample_idx];
-            let insert = if place < 8 { c } else { '\n' };
-            sample.push(insert);
-        }
-        samples.last_mut().unwrap().push('\n');
-    }
-    samples
-}
-
-fn get_samples_compressed(input: &str) -> Vec<String> {
-    let width = input.find('\n').unwrap() + 1;
-    let height = (input.len() + 1) / width;
-    let samples_per_row = (width - 2) / 6;
-    let rows = 0..((height - 2) / 6);
-    rows
-        .map(|row| {
-            let start = row * (width * 6);
-            let end = start + (width * 8) - 1; 
-            &input[start..end]
-        })
-        .flat_map(|row| get_row_samples_compressed(row, samples_per_row))
+fn get_samples(wall: &[Vec<u8>]) -> Vec<Sample> {
+    let measure_row: &Vec<u8> = &wall[2];
+    let samples_per_row: usize = measure_row.iter()
+        .filter(|&&c| c == b'.')
+        .count() / 4;
+    let samples_per_col: usize = (0..wall.len())
+        .map(|y| wall[y][2])
+        .filter(|&c| c == b'.')
+        .count() / 4;
+    let spacing: usize = match measure_row.iter().dropping(8).enumerate()
+        .find(|&(_, &c)| c == b'.') {
+            Some((0, _)) => 6,
+            Some((_amt, _)) => 8,
+            None => 0,
+        };
+    (0..samples_per_col)
+        .cartesian_product(0..samples_per_row)
+        .map(|(y, x)| Sample::new(Pos::new2d(x * spacing, y * spacing)))
         .collect()
 }
 
-fn get_row_samples_compressed(row: &str, samples_per_row: usize) -> Vec<String> {
-    let mut samples = vec![String::new(); samples_per_row];
-    for line in row.lines() {
-        let line = line.as_bytes();
-        for sample_idx in 0..samples_per_row {
-            let start = sample_idx * 6;
-            let end = start + 8;
-            let sample = &mut samples[sample_idx];
-            for place in start..end {
-                sample.push(line[place] as char);
+fn deduce_runes(wall: &mut Vec<Vec<u8>>, samples: &Vec<Sample>) {
+    let mut changed = true;
+    while changed {
+        changed = false;
+        for sample in samples {
+            let hz_symbols: Vec<Vec<u8>> = sample.hz.iter()
+                .map(|row| {
+                    row.iter().map(|pos| wall[pos.y()][pos.x()]).collect()
+                })
+                .collect();
+            let vt_symbols: Vec<Vec<u8>> = sample.vt.iter()
+                .map(|col| {
+                    col.iter().map(|pos| wall[pos.y()][pos.x()]).collect()
+                })
+                .collect();
+
+            for rune_spot in (0..4).cartesian_product(0..4) {
+                let rune_spot: Pos = Coord::from(rune_spot);
+                let rs_concrete = rune_spot + sample.tl;
+                let rune = wall[rs_concrete.y()][rs_concrete.x()];
+                let hz_symbols = &hz_symbols[rune_spot.y()];
+                let vt_symbols = &vt_symbols[rune_spot.x()];
+
+                if !(rune as char).is_ascii_alphabetic() {
+                    let hz_set: HashSet<u8> = hz_symbols.iter().copied().collect();
+                    let vt_set: HashSet<u8> = vt_symbols.iter().copied().collect();
+                    if let Some(&intersection) = hz_set.intersection(&vt_set)
+                        .filter(|c| c.is_ascii_alphabetic())
+                        .next() {
+                        
+                        wall[rs_concrete.y()][rs_concrete.x()] = intersection;
+                        changed = true;
+                    } else {
+                        if hz_symbols.iter().all(|c| c.is_ascii_alphabetic()) 
+                            && vt_symbols.iter().filter(|c| c.is_ascii_alphabetic()).count() == 3 {
+                            
+                            let rune_row: HashSet<u8> = (0..4)
+                                .map(|x_offset| wall[rs_concrete.y()][sample.tl.x() + x_offset])
+                                .collect();
+                            if rune_row.iter().filter(|c| c.is_ascii_alphabetic()).count() == 3 {
+                                let rune = hz_set
+                                    .difference(&rune_row)
+                                    .filter(|c| c.is_ascii_alphabetic())
+                                    .next();
+                                if let Some(&rune) = rune {
+                                    wall[rs_concrete.y()][rs_concrete.x()] = rune;
+                                    wall[rs_concrete.y()][rs_concrete.x()] = rune;
+                                    let cross = vt_symbols.iter().enumerate()
+                                        .find(|(_, &c)| c == b'?')
+                                        .unwrap()
+                                        .0;
+                                    let wall_pos = &sample.vt[rune_spot.x()][cross];
+                                    wall[wall_pos.y()][wall_pos.x()] = rune;
+                                    changed = true;
+                                }
+                            }
+                        } else if vt_symbols.iter().all(|c| c.is_ascii_alphabetic()) 
+                            && hz_symbols.iter().filter(|c| c.is_ascii_alphabetic()).count() == 3 {
+                            
+                            let rune_col: HashSet<u8> = (0..4)
+                                .map(|y_offset| wall[sample.tl.y() + y_offset][rs_concrete.x()])
+                                .collect();
+                            if rune_col.iter().filter(|c| c.is_ascii_alphabetic()).count() == 3 {
+                                let rune = vt_set
+                                    .difference(&rune_col)
+                                    .filter(|c| c.is_ascii_alphabetic())
+                                    .next();
+                                if let Some(&rune) = rune {
+                                    wall[rs_concrete.y()][rs_concrete.x()] = rune;
+                                    let cross = hz_symbols.iter().enumerate()
+                                        .find(|(_, &c)| c == b'?')
+                                        .unwrap()
+                                        .0;
+                                    let wall_pos = &sample.hz[rune_spot.y()][cross];
+                                    wall[wall_pos.y()][wall_pos.x()] = rune;
+                                    changed = true;
+                                }
+                            }
+                        }
+                    }
+                }
             }
-            sample.push('\n');
         }
     }
-    samples
 }
 
-fn crosstabs(sample: &str) -> (Vec<HashSet<char>>, Vec<HashSet<char>>, usize) {
-    println!("{sample}");
-    let length = sample.find(|c| c != '*').unwrap() * 2;
-    let mut hz = vec![HashSet::new(); length];
-    let mut vt = vec![HashSet::new(); length];
-    let mut hz_index = 0;
-    for line in sample.lines() {
-        if line.starts_with('*') {
-            line.chars()
-            .filter(|c| c.is_alphabetic())
-            .enumerate()
-            .for_each(|(idx, c)| { vt[idx].insert(c); });
-        } else {
-            line.chars().for_each(|c| { hz[hz_index].insert(c); });
-            hz_index += 1;
-        }
+fn get_runic_word(wall: &[Vec<u8>], sample: Sample) -> String {
+    (0..4).cartesian_product(0..4)
+        .map(|(y, x)| {
+            let wall_pos = Pos::from((x, y)) + sample.tl;
+            wall[wall_pos.y()][wall_pos.x()] as char
+        })
+        .collect()
+}
+
+fn get_power(words: &Vec<String>) -> usize {
+    words.iter()
+        .map(|word| {
+            if word.chars().all(|c| c.is_ascii_alphabetic()) {
+                word.chars().enumerate()
+                    .map(|(idx, c)| (c as usize - 64) * (idx + 1))
+                    .sum()
+            } else {
+                0
+            }
+        })
+        .sum()
+}
+
+#[derive(Debug)]
+struct Sample {
+    tl: Pos,
+    hz: Vec<Vec<Pos>>,
+    vt: Vec<Vec<Pos>>,
+}
+
+const OFFSETS: [usize; 4] = [0, 1, 6, 7];
+
+impl Sample {
+    fn new(tl: Pos) -> Self {
+        let hz: Vec<Vec<Pos>> = (2..6)
+            .map(|y_offset| {
+                OFFSETS.iter()
+                    .map(move |x_offset| {
+                        Pos::new2d(tl.x() + x_offset, tl.y() + y_offset)
+                    })
+                    .collect()
+            }).collect();
+        let vt: Vec<Vec<Pos>> = (2..6)
+            .map(|x_offset| {
+                OFFSETS.iter()
+                    .map(move |y_offset| {
+                        Pos::new2d(tl.x() + x_offset, tl.y() + y_offset)
+                    })
+                    .collect()
+            }).collect();
+        let tl = tl + 2;
+        Self { tl, hz, vt }
     }
-    (hz, vt, length)
 }
 
 #[test]
@@ -142,8 +212,20 @@ CR....HZ
 FL....JW
 SG....MN
 **FTZV**
-**GMJH**"];
-    // assert_eq!(10, part1(inputs[0]));
-    // assert_eq!(10, solve(tests[1]));
-    // assert_eq!(10, solve(tests[2]));
+**GMJH**", "**XFZB**DCST**
+**LWQK**GQJH**
+?G....WL....DQ
+BS....H?....CN
+P?....KJ....TV
+NM....Z?....SG
+**NSHM**VKWZ**
+**PJGV**XFNL**
+WQ....?L....YS
+FX....DJ....HV
+?Y....WM....?J
+TJ....YK....LP
+**XRTK**BMSP**
+**DWZN**GCJV**"];
+    assert_eq!("PTBVRCZHFLJWGMNS".to_string(), solve(inputs[0], |words| words[0].clone()));
+    assert_eq!(3889, solve(inputs[1], |words| get_power(&words)));
 }
