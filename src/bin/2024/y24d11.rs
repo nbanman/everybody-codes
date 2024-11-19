@@ -39,7 +39,7 @@ fn get_generations(input: &str, start: &str) -> (Vec<Vec<usize>>, usize) {
     let mut id_assign = 0;
     let mut ids: HashMap<&str, usize> = HashMap::new();
     let mut start_id = 0;
-    let generations: HashMap<_, _> = input.lines()
+    let generations: Vec<_> = input.lines()
         .map(|line| {
             let (prev, next) = line.split_once(':').unwrap();
             let id = ids.entry(prev)
@@ -63,9 +63,6 @@ fn get_generations(input: &str, start: &str) -> (Vec<Vec<usize>>, usize) {
                 .collect();
             (id, children)
         })
-        .collect();
-    let generations: Vec<Vec<usize>> = generations
-        .into_iter()
         .sorted()
         .map(|(_, children)| children)
         .collect();
