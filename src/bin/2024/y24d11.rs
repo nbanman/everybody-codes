@@ -54,23 +54,18 @@ fn get_generations(input: &str, start: &str) -> (Vec<Vec<usize>>, usize) {
     (generations, start_id)
 }
 
-fn next_gen(
-    pop: &[usize], 
-    generations: &[Vec<usize>],
-) -> Vec<usize> 
-{
-    let mut next_gen = vec![0; pop.len()];
-    for (termite, &amt) in pop.iter().enumerate() {
-        let offspring = generations.get(termite).unwrap();
-        for &child in offspring {
-            next_gen[child] += amt;
-        }
-    }
-    next_gen
-}
-
 fn breed(population: Vec<usize>, generations: &[Vec<usize>], days: usize) -> usize {
-    successors(Some(population), |pop| Some(next_gen(pop, &generations)))
+    let next_gen = |pop: &[usize]| {
+        let mut next_gen = vec![0; pop.len()];
+        for (termite, &amt) in pop.iter().enumerate() {
+            let offspring = generations.get(termite).unwrap();
+            for &child in offspring {
+                next_gen[child] += amt;
+            }
+        }
+        next_gen
+    };
+    successors(Some(population), |pop| Some(next_gen(pop)))
         .take(days + 1)
         .last()
         .unwrap()
