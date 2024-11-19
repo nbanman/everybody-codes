@@ -19,7 +19,7 @@ fn main() {
 fn part1(input: &str) -> String {
     let knights = parse_knights(input);
     let race = TRACK1.as_bytes().iter()
-        .map(|b| power_of(b));
+        .map(power_of);
     knights.into_iter()
         .map(|(knight, plan)| {
             (knight, get_power(&plan, race.clone()))
@@ -54,7 +54,7 @@ fn part3(input: &str) -> usize {
     let plans: Vec<Vec<isize>> = get_plans();
     plans.iter()
         .filter(|&plan| {
-            get_power(&plan, race.clone()) > opponent_power
+            get_power(plan, race.clone()) > opponent_power
         })
         .count()
 }
@@ -87,7 +87,7 @@ fn traverse(
     }
 }
 
-fn parse_knights<'a>(input: &str) -> Vec<(&str, Vec<isize>)> {
+fn parse_knights(input: &str) -> Vec<(&str, Vec<isize>)> {
     input.lines()
         .map(|line| {
             let (knight, power) = line.split_once(':').unwrap();
@@ -100,15 +100,12 @@ fn parse_knights<'a>(input: &str) -> Vec<(&str, Vec<isize>)> {
 }
 
 fn parse_track(track: &'static str) -> Vec<isize> {
-    let track = track;
     let width = track.find('\n').unwrap();
     let track: Vec<Vec<u8>> = track.lines()
         .map(|line| {
             format!("{:<width$}", line, width = width)
                 .as_bytes()
-                .iter()
-                .copied()
-                .collect()
+                .to_vec()
         })
         .collect();
     let turns = [Cardinal::straight, Cardinal::left, Cardinal::right];
@@ -144,16 +141,16 @@ fn parse_track(track: &'static str) -> Vec<isize> {
         .collect()
 }
 
-fn get_race<'a>(track: &'a[isize], laps: usize) -> impl Iterator<Item = isize> + 'a + Clone {
+fn get_race(track: &[isize], laps: usize) -> impl Iterator<Item = isize> + '_ + Clone {
     track.iter().copied().cycle().take(laps * track.len())
 }
 
-fn get_power(plan: &Vec<isize>, race: impl Iterator<Item = isize>) -> isize {
+fn get_power(plan: &[isize], race: impl Iterator<Item = isize>) -> isize {
         let plan = plan.iter().copied().cycle();
         race.zip(plan)
             .scan(10isize, |state, (track, device)| {
                 let adjust = if track == 0 { device } else { track };
-                *state = *state + adjust;
+                *state += adjust;
                 Some(*state)
             })
             .sum()

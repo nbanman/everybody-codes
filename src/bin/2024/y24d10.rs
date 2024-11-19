@@ -33,7 +33,7 @@ fn get_wall(input: &str) -> Vec<Vec<u8>> {
     input.lines()
         .filter(|line| !line.is_empty())
         .map(|line| {
-            line.as_bytes().into_iter()
+            line.as_bytes().iter()
                 .filter(|&&c| c != b' ')
                 .copied()
                 .collect()
@@ -62,7 +62,7 @@ fn get_samples(wall: &[Vec<u8>]) -> Vec<Sample> {
         .collect()
 }
 
-fn deduce_runes(wall: &mut Vec<Vec<u8>>, samples: &Vec<Sample>) {
+fn deduce_runes(wall: &mut [Vec<u8>], samples: &[Sample]) {
     let mut changed = true;
     while changed {
         changed = false;
@@ -89,56 +89,51 @@ fn deduce_runes(wall: &mut Vec<Vec<u8>>, samples: &Vec<Sample>) {
                     let hz_set: HashSet<u8> = hz_symbols.iter().copied().collect();
                     let vt_set: HashSet<u8> = vt_symbols.iter().copied().collect();
                     if let Some(&intersection) = hz_set.intersection(&vt_set)
-                        .filter(|c| c.is_ascii_alphabetic())
-                        .next() {
+                        .find(|c| c.is_ascii_alphabetic()) {
                         
                         wall[rs_concrete.y()][rs_concrete.x()] = intersection;
                         changed = true;
-                    } else {
-                        if hz_symbols.iter().all(|c| c.is_ascii_alphabetic()) 
-                            && vt_symbols.iter().filter(|c| c.is_ascii_alphabetic()).count() == 3 {
-                            
-                            let rune_row: HashSet<u8> = (0..4)
-                                .map(|x_offset| wall[rs_concrete.y()][sample.tl.x() + x_offset])
-                                .collect();
-                            if rune_row.iter().filter(|c| c.is_ascii_alphabetic()).count() == 3 {
-                                let rune = hz_set
-                                    .difference(&rune_row)
-                                    .filter(|c| c.is_ascii_alphabetic())
-                                    .next();
-                                if let Some(&rune) = rune {
-                                    wall[rs_concrete.y()][rs_concrete.x()] = rune;
-                                    wall[rs_concrete.y()][rs_concrete.x()] = rune;
-                                    let cross = vt_symbols.iter().enumerate()
-                                        .find(|(_, &c)| c == b'?')
-                                        .unwrap()
-                                        .0;
-                                    let wall_pos = &sample.vt[rune_spot.x()][cross];
-                                    wall[wall_pos.y()][wall_pos.x()] = rune;
-                                    changed = true;
-                                }
+                    } else if hz_symbols.iter().all(|c| c.is_ascii_alphabetic()) 
+                        && vt_symbols.iter().filter(|c| c.is_ascii_alphabetic()).count() == 3 {
+                        
+                        let rune_row: HashSet<u8> = (0..4)
+                            .map(|x_offset| wall[rs_concrete.y()][sample.tl.x() + x_offset])
+                            .collect();
+                        if rune_row.iter().filter(|c| c.is_ascii_alphabetic()).count() == 3 { 
+                            let rune = hz_set
+                                .difference(&rune_row)
+                                .find(|c| c.is_ascii_alphabetic());
+                            if let Some(&rune) = rune {
+                                wall[rs_concrete.y()][rs_concrete.x()] = rune;
+                                wall[rs_concrete.y()][rs_concrete.x()] = rune;
+                                let cross = vt_symbols.iter().enumerate()
+                                    .find(|(_, &c)| c == b'?')
+                                    .unwrap()
+                                    .0;
+                                let wall_pos = &sample.vt[rune_spot.x()][cross];
+                                wall[wall_pos.y()][wall_pos.x()] = rune;
+                                changed = true;
                             }
-                        } else if vt_symbols.iter().all(|c| c.is_ascii_alphabetic()) 
-                            && hz_symbols.iter().filter(|c| c.is_ascii_alphabetic()).count() == 3 {
+                        }
+                    } else if vt_symbols.iter().all(|c| c.is_ascii_alphabetic()) 
+                        && hz_symbols.iter().filter(|c| c.is_ascii_alphabetic()).count() == 3 {
                             
-                            let rune_col: HashSet<u8> = (0..4)
-                                .map(|y_offset| wall[sample.tl.y() + y_offset][rs_concrete.x()])
-                                .collect();
-                            if rune_col.iter().filter(|c| c.is_ascii_alphabetic()).count() == 3 {
-                                let rune = vt_set
-                                    .difference(&rune_col)
-                                    .filter(|c| c.is_ascii_alphabetic())
-                                    .next();
-                                if let Some(&rune) = rune {
-                                    wall[rs_concrete.y()][rs_concrete.x()] = rune;
-                                    let cross = hz_symbols.iter().enumerate()
-                                        .find(|(_, &c)| c == b'?')
-                                        .unwrap()
-                                        .0;
-                                    let wall_pos = &sample.hz[rune_spot.y()][cross];
-                                    wall[wall_pos.y()][wall_pos.x()] = rune;
-                                    changed = true;
-                                }
+                        let rune_col: HashSet<u8> = (0..4)
+                            .map(|y_offset| wall[sample.tl.y() + y_offset][rs_concrete.x()])
+                            .collect();
+                        if rune_col.iter().filter(|c| c.is_ascii_alphabetic()).count() == 3 {
+                            let rune = vt_set
+                                .difference(&rune_col)
+                                .find(|c| c.is_ascii_alphabetic());
+                            if let Some(&rune) = rune {
+                                wall[rs_concrete.y()][rs_concrete.x()] = rune;
+                                let cross = hz_symbols.iter().enumerate()
+                                    .find(|(_, &c)| c == b'?')
+                                    .unwrap()
+                                    .0;
+                                let wall_pos = &sample.hz[rune_spot.y()][cross];
+                                wall[wall_pos.y()][wall_pos.x()] = rune;
+                                changed = true;
                             }
                         }
                     }
@@ -157,7 +152,7 @@ fn get_runic_word(wall: &[Vec<u8>], sample: Sample) -> String {
         .collect()
 }
 
-fn get_power(words: &Vec<String>) -> usize {
+fn get_power(words: &[String]) -> usize {
     words.iter()
         .map(|word| {
             if word.chars().all(|c| c.is_ascii_alphabetic()) {

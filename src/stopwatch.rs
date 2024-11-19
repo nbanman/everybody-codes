@@ -43,7 +43,7 @@ impl ReportDuration for Duration {
 ///
 /// The stopwatch can be started, stopped, reset, and queried for various timing measurements.
 /// It keeps track of total elapsed time and supports lap timing and split timing operations.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct Stopwatch {
     /// Indicates whether the stopwatch is currently running
     pub is_running: bool,
@@ -152,4 +152,3 @@ impl Stopwatch {
         self.is_running = false;
     }
 }
-

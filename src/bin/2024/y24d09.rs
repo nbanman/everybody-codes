@@ -1,5 +1,3 @@
-use std::usize;
-
 use everybody_codes::{get_numbers::ContainsNumbers, inputs::get_inputs, stopwatch::{ReportDuration, Stopwatch}, try_get::TryGet};
 
 fn main() {
@@ -83,7 +81,7 @@ fn solve(brightnesses: &[usize], stamps: &[usize], cache: &mut Vec<Option<usize>
                     *brightness, 
                     usize::MAX, 
                     cache, 
-                    &stamps
+                    stamps
                 )
             }
         })
@@ -113,7 +111,7 @@ fn get_beetles (
 
         // if divides cleanly, we have our answer, update cache and pop up with it
         if remaining % stamp == 0 { // may not need first conditional
-            if cache[remaining] == None {
+            if cache[remaining].is_none() {
                 cache[remaining] = Some(beetles);
             }
             return beetles;

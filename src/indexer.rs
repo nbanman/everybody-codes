@@ -1,5 +1,6 @@
 use std::{collections::HashMap, hash::Hash};
 
+#[derive(Clone, Default, Debug)]
 pub struct Indexer<T: Hash + Eq + Clone> {
     id: usize,
     index_to_value: HashMap<usize, T>,
@@ -18,14 +19,13 @@ impl <T: Hash + Eq + Clone> Indexer<T> {
     }
 
     pub fn get_or_assign(&mut self, value: &T) -> usize {
-        self.value_to_index.entry(value.clone())
+        *self.value_to_index.entry(value.clone())
                 .or_insert_with(|| {
                     let value_id = self.id;
                     self.id += 1;
                     self.index_to_value.insert(value_id, value.to_owned());
                     value_id
                 })
-                .clone()
     }
 
     pub fn get(&self, value: &T) -> Option<usize> {
@@ -50,7 +50,7 @@ impl <T: Hash + Eq + Clone> Indexer<T> {
 
     pub fn remove_by_index(&mut self, index: usize) -> Option<T> {
         let removal = self.index_to_value.remove(&index);
-        return if let Some(value) = removal {
+        if let Some(value) = removal {
             self.value_to_index.remove(&value);
             Some(value)
         } else {
@@ -60,7 +60,7 @@ impl <T: Hash + Eq + Clone> Indexer<T> {
 
     pub fn remove_by_value(&mut self, value: T) -> Option<usize> {
         let removal = self.value_to_index.remove(&value);
-        return if let Some(index) = removal {
+        if let Some(index) = removal {
             self.index_to_value.remove(&index);
             Some(index)
         } else {

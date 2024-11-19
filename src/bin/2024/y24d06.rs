@@ -52,13 +52,11 @@ fn get_paths(truncate: bool, branches: HashMap<&str, Vec<&str>>) -> Vec<String> 
                 }
             }
             paths.push(path_name);
-        } else {
-            if let Some(children) = branches.get(current) {
-                for child in children {
-                    let mut new_path = path.clone();
-                    new_path.push(child);
-                    q.push(new_path);
-                }
+        } else if let Some(children) = branches.get(current) {
+            for child in children {
+                let mut new_path = path.clone();
+                new_path.push(child);
+                q.push(new_path);
             } 
         }
     }
