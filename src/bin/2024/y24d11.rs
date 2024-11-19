@@ -15,14 +15,14 @@ fn main() {
 }
 
 fn get_population(input: &str, days: usize, start: &str) -> usize {
-    let (generations, start_key) = get_generations(input, start);
+    let generations = get_generations(input, Some(start));
     let mut population = vec![0usize; generations.len()];
-    population[start_key] = 1;
+    population[0] = 1;
     breed(population, &generations, days)
 }
 
 fn minmax_population(input: &str) -> usize {
-    let (generations, _) = get_generations(input, "None");
+    let generations = get_generations(input, None);
     let (min, max) = (0..generations.len())
         .map(|termite| {
             let mut population = vec![0usize; generations.len()];
@@ -35,8 +35,11 @@ fn minmax_population(input: &str) -> usize {
     max - min
 }
 
-fn get_generations(input: &str, start: &str) -> (Vec<Vec<usize>>, usize) {
+fn get_generations(input: &str, start: Option<&str>) -> Vec<Vec<usize>> {
     let mut indexer = Indexer::new();
+    if let Some(start) = start {
+        indexer.assign(&start);
+    }
     let generations: Vec<_> = input.lines()
         .map(|line| {
             let (prev, next) = line.split_once(':').unwrap();
@@ -49,7 +52,7 @@ fn get_generations(input: &str, start: &str) -> (Vec<Vec<usize>>, usize) {
         .sorted_unstable()
         .map(|(_, children)| children)
         .collect();
-    (generations, indexer.get_or_assign(&start))
+    generations
 }
 
 fn breed(population: Vec<usize>, generations: &[Vec<usize>], days: usize) -> usize {
