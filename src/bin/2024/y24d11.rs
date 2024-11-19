@@ -1,6 +1,6 @@
-use std::{collections::HashMap, iter::successors};
+use std::iter::successors;
 
-use everybody_codes::{inputs::get_inputs, stopwatch::{ReportDuration, Stopwatch}};
+use everybody_codes::{inputs::get_inputs, stopwatch::{ReportDuration, Stopwatch}, indexer::Indexer};
 use itertools::Itertools;
 
 fn main() {
@@ -36,34 +36,19 @@ fn minmax_population(input: &str) -> usize {
 }
 
 fn get_generations(input: &str, start: &str) -> (Vec<Vec<usize>>, usize) {
-    let mut id_assign = 0;
-    let mut ids: HashMap<&str, usize> = HashMap::new();
+    let mut indexer = Indexer::new();
     let mut start_id = 0;
     let generations: Vec<_> = input.lines()
         .map(|line| {
             let (prev, next) = line.split_once(':').unwrap();
-            let id = ids.entry(prev)
-                .or_insert_with(|| {
-                    let id = id_assign;
-                    id_assign += 1;
-                    id
-                })
-                .clone();
+            let id = indexer.get_or_assign(&prev);
             if prev == start { start_id = id; }
             let children: Vec<_> = next.split(',')
-                .map(|child| {
-                    let child_id = ids.entry(child)
-                        .or_insert_with(|| {
-                            let id = id_assign;
-                            id_assign += 1;
-                            id
-                        });
-                    *child_id
-                })
+                .map(|child| indexer.get_or_assign(&child))
                 .collect();
             (id, children)
         })
-        .sorted()
+        .sorted_unstable()
         .map(|(_, children)| children)
         .collect();
     (generations, start_id)
