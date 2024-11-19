@@ -15,19 +15,18 @@ fn main() {
 }
 
 fn get_population(input: &str, days: usize, start: &str) -> usize {
-    let generations = get_generations(input);
-    let mut population = HashMap::new();
-    population.insert(start.to_string(), 1);
+    let (generations, start_key) = get_generations(input, start);
+    let mut population = vec![0usize; generations.len()];
+    population[start_key] = 1;
     breed(population, &generations, days)
 }
 
 fn minmax_population(input: &str) -> usize {
-    let generations = get_generations(input);
-    let termites: Vec<String> = generations.keys().cloned().collect();
-    let (min, max) = termites.into_iter()
+    let (generations, _) = get_generations(input, "None");
+    let (min, max) = (0..generations.len())
         .map(|termite| {
-            let mut population = HashMap::new();
-            population.insert(termite, 1);
+            let mut population = vec![0usize; generations.len()];
+            population[termite] = 1;
             breed(population, &generations, 20)
         })
         .minmax()
@@ -36,39 +35,63 @@ fn minmax_population(input: &str) -> usize {
     max - min
 }
 
-fn get_generations(input: &str) -> HashMap<String, Vec<String>> {
-    input.lines()
+fn get_generations(input: &str, start: &str) -> (Vec<Vec<usize>>, usize) {
+    let mut id_assign = 0;
+    let mut ids: HashMap<&str, usize> = HashMap::new();
+    let mut start_id = 0;
+    let generations: HashMap<_, _> = input.lines()
         .map(|line| {
             let (prev, next) = line.split_once(':').unwrap();
-            let next = next.split(',').map(|s| s.to_string()).collect();
-            (prev.to_string(), next)
+            let id = ids.entry(prev)
+                .or_insert_with(|| {
+                    let id = id_assign;
+                    id_assign += 1;
+                    id
+                })
+                .clone();
+            if prev == start { start_id = id; }
+            let children: Vec<_> = next.split(',')
+                .map(|child| {
+                    let child_id = ids.entry(child)
+                        .or_insert_with(|| {
+                            let id = id_assign;
+                            id_assign += 1;
+                            id
+                        });
+                    *child_id
+                })
+                .collect();
+            (id, children)
         })
-        .collect()
+        .collect();
+    let generations: Vec<Vec<usize>> = generations
+        .into_iter()
+        .sorted()
+        .map(|(_, children)| children)
+        .collect();
+    (generations, start_id)
 }
 
 fn next_gen(
-    pop: &HashMap<String, usize>, 
-    generations: &HashMap<String, Vec<String>>,
-) -> HashMap<String, usize> 
+    pop: &[usize], 
+    generations: &[Vec<usize>],
+) -> Vec<usize> 
 {
-    let mut next_gen = HashMap::new();
-    for (termite, &amt) in pop.iter() {
+    let mut next_gen = vec![0; pop.len()];
+    for (termite, &amt) in pop.iter().enumerate() {
         let offspring = generations.get(termite).unwrap();
-        for child in offspring {
-            next_gen.entry(child.clone())
-                .and_modify(|n| *n += amt)
-                .or_insert(amt);
+        for &child in offspring {
+            next_gen[child] += amt;
         }
     }
     next_gen
 }
 
-fn breed(population: HashMap<String, usize>, generations: &HashMap<String, Vec<String>>, days: usize) -> usize {
+fn breed(population: Vec<usize>, generations: &[Vec<usize>], days: usize) -> usize {
     successors(Some(population), |pop| Some(next_gen(pop, &generations)))
         .take(days + 1)
         .last()
         .unwrap()
-        .values()
         .into_iter()
         .sum()
 }
