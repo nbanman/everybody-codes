@@ -37,12 +37,10 @@ fn minmax_population(input: &str) -> usize {
 
 fn get_generations(input: &str, start: &str) -> (Vec<Vec<usize>>, usize) {
     let mut indexer = Indexer::new();
-    let mut start_id = 0;
     let generations: Vec<_> = input.lines()
         .map(|line| {
             let (prev, next) = line.split_once(':').unwrap();
             let id = indexer.get_or_assign(&prev);
-            if prev == start { start_id = id; }
             let children: Vec<_> = next.split(',')
                 .map(|child| indexer.get_or_assign(&child))
                 .collect();
@@ -51,7 +49,7 @@ fn get_generations(input: &str, start: &str) -> (Vec<Vec<usize>>, usize) {
         .sorted_unstable()
         .map(|(_, children)| children)
         .collect();
-    (generations, start_id)
+    (generations, indexer.get_or_assign(&start))
 }
 
 fn breed(population: Vec<usize>, generations: &[Vec<usize>], days: usize) -> usize {
