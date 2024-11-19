@@ -15,17 +15,26 @@ fn main() {
 }
 
 fn get_population(input: &str, days: usize, start: &str) -> usize {
+    // maps the parent termite with child termites
     let generations = get_generations(input, Some(start));
-    let mut population = vec![0usize; generations.len()];
+    
+    // define initial population (of one)
+    let mut population = vec![0; generations.len()];
     population[0] = 1;
+
+    // commence breeding program!
     breed(population, &generations, days)
 }
 
 fn minmax_population(input: &str) -> usize {
     let generations = get_generations(input, None);
+    
+    // does the same thing as get_population, except runs it over and over using each termite
+    // as the initial seed. Calculate the populations and subtract the min population from the
+    // max.
     let (min, max) = (0..generations.len())
         .map(|termite| {
-            let mut population = vec![0usize; generations.len()];
+            let mut population = vec![0; generations.len()];
             population[termite] = 1;
             breed(population, &generations, 20)
         })
@@ -36,11 +45,17 @@ fn minmax_population(input: &str) -> usize {
 }
 
 fn get_generations(input: &str, start: Option<&str>) -> Vec<Vec<usize>> {
+    // Each termite is assigned a unique ID, starting at 0 and going sequentially
     let mut indexer = Indexer::new();
+
+    // If a "start" termite exists, give it ID 0.
     if let Some(start) = start {
         indexer.assign(&start);
     }
-    let generations: Vec<_> = input.lines()
+
+    // Parse map using Vecs instead of a slow Hashmap, sorting the outer Vec by ID so that
+    // the children's IDs can be looked up by the parent ID. 
+    input.lines()
         .map(|line| {
             let (prev, next) = line.split_once(':').unwrap();
             let id = indexer.get_or_assign(&prev);
@@ -51,11 +66,11 @@ fn get_generations(input: &str, start: Option<&str>) -> Vec<Vec<usize>> {
         })
         .sorted_unstable()
         .map(|(_, children)| children)
-        .collect();
-    generations
+        .collect()
 }
 
 fn breed(population: Vec<usize>, generations: &[Vec<usize>], days: usize) -> usize {
+    // takes a Vec of Ints, applies the generations rules, and returns it as a Vec of Ints
     let next_gen = |pop: &[usize]| {
         let mut next_gen = vec![0; pop.len()];
         for (termite, &amt) in pop.iter().enumerate() {
@@ -66,6 +81,9 @@ fn breed(population: Vec<usize>, generations: &[Vec<usize>], days: usize) -> usi
         }
         next_gen
     };
+
+    // runs next_gen for n number of days and returns the total termites at the end of the
+    // last day
     successors(Some(population), |pop| Some(next_gen(pop)))
         .take(days + 1)
         .last()
