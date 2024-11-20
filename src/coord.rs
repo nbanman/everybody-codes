@@ -1,4 +1,4 @@
-use std::{fmt::Display, ops::{Add, Div, Mul, Sub}};
+use std::{fmt::Display, ops::{Add, AddAssign, Div, Mul, Sub, SubAssign}};
 
 use itertools::Itertools;
 use num_traits::{One, PrimInt, Unsigned, Zero};
@@ -85,6 +85,27 @@ where
     }
 }
 
+impl<T, const N: usize> AddAssign for Coord<T, N> 
+where 
+    T: Coordinate + AddAssign,
+{
+    fn add_assign(&mut self, other: Self) {
+        for idx in 0usize..N {
+            self.0[idx] = self.0[idx] + other.0[idx]
+        }
+    }
+}
+
+impl<T, const N: usize> AddAssign<T> for Coord<T, N> 
+where 
+    T: Coordinate + AddAssign,
+{
+    fn add_assign(&mut self, other: T) {
+        for idx in 0usize..N {
+            self.0[idx] = self.0[idx] + other
+        }
+    }
+}
 
 impl<T: Coordinate, const N: usize> Sub for Coord<T, N> {
     type Output = Self;
@@ -97,6 +118,44 @@ impl<T: Coordinate, const N: usize> Sub for Coord<T, N> {
         Self(sum)
     }
 }
+
+impl<T, const N: usize> Sub<T> for Coord<T, N> 
+where 
+    T: Coordinate + Sub<Output = T>,
+{
+    type Output = Self;
+    
+    fn sub(self, rhs: T) -> Self::Output {
+        let mut difference = self.0;
+        for idx in 0usize..N {
+            difference[idx] = difference[idx] - rhs;
+        }
+        Self(difference)
+    }
+}
+
+impl<T, const N: usize> SubAssign for Coord<T, N> 
+where 
+    T: Coordinate + SubAssign,
+{
+    fn sub_assign(&mut self, other: Self) {
+        for idx in 0usize..N {
+            self.0[idx] = self.0[idx] - other.0[idx]
+        }
+    }
+}
+
+impl<T, const N: usize> SubAssign<T> for Coord<T, N> 
+where 
+    T: Coordinate + SubAssign,
+{
+    fn sub_assign(&mut self, other: T) {
+        for idx in 0usize..N {
+            self.0[idx] = self.0[idx] - other
+        }
+    }
+}
+
 
 impl<T: Coordinate, const N: usize> Mul for Coord<T, N> {
     type Output = Self;
