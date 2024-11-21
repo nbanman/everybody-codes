@@ -130,6 +130,9 @@ fn missile_defense(input: &str) -> usize {
 
 fn intercept(catapult: isize, meteor: &Pos) -> Option<usize> {
 
+    // if the x-coordinate is odd, the missile and the meteor will pass by each other every
+    // time since we only measure at discrete integers of t. Solve this by launching at t=1,
+    // which makes it even.
     let meteor_t1 = if meteor.x() & 1 == 1 {
         *meteor - 1
     } else {
