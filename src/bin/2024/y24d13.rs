@@ -2,12 +2,6 @@ use std::{cmp::{min, Reverse}, collections::{BinaryHeap, HashSet}};
 
 use everybody_codes::{cardinals::Cardinal, inputs::get_inputs, stopwatch::{ReportDuration, Stopwatch}};
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-struct State {
-    pub time: usize,
-    pub pos: usize,
-}
-
 fn main() {
     let mut stopwatch = Stopwatch::new();
     stopwatch.start();
@@ -17,6 +11,12 @@ fn main() {
     println!("2. {} ({})", solve(&input2), stopwatch.lap().report());
     println!("3. {} ({})", solve(&input3), stopwatch.lap().report());
     println!("Total: {}", stopwatch.stop().report());
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+struct State {
+    pub time: usize,
+    pub pos: usize,
 }
 
 fn solve(chamber: &str) -> usize {
@@ -30,38 +30,43 @@ fn solve(chamber: &str) -> usize {
     let start = State { time: 0, pos: start_pos };
     q.push(Reverse(start));
     let moves = [Cardinal::North, Cardinal::South, Cardinal::East, Cardinal::West];
+    
     while let Some(Reverse(state)) = q.pop() {
+        // base case, path found; return time
         if chamber[state.pos] == b'S' { return state.time; }
+        
+        // add the state to visited list, or skip processing the state if previously visited
         if !visited.insert(state.pos) { continue; }
+
+        // process state into new states by moving to adjacent spaces, determining if it is a 
+        // valid move, then computing cost to move to the valid spaces. Finally, add them
+        // to the queue.
         moves.iter()
             .filter_map(|dir| {
+                // move around chamber, return None if invalid position
                 let neighbor_pos= match dir {
                     Cardinal::North => state.pos.checked_sub(width),
                     Cardinal::East => Some(state.pos + 1),
                     Cardinal::South => Some(state.pos + width),
                     Cardinal::West => Some(state.pos - 1),
-                };
-                let Some(neighbor_pos) = neighbor_pos else {
-                    return None;
-                };
-                let neighbor_value = if chamber[neighbor_pos] == b'S' {
-                    48
-                } else {
-                    chamber[neighbor_pos]
-                };
-                let Some(neighbor_value) = (neighbor_value as char).to_digit(10) else { 
-                    return None; 
-                };
-                let current_value = chamber[state.pos];
-                let current_value = if current_value == b'E' { 0 } else { current_value - 48 };
-                if visited.contains(&neighbor_pos) { return None; }
+                }?;
+
+                // return None if a '#' or '\n' is hit.
+                if !(chamber[neighbor_pos] as char).is_ascii_alphanumeric() { return None; };
+                
+                let neighbor_floor = (chamber[neighbor_pos] as char)
+                    .to_digit(10)
+                    .unwrap_or_default() as i8;
+                let current_floor = (chamber[state.pos] as char)
+                    .to_digit(10)
+                    .unwrap_or_default() as i8;
                 let time_cost = (1 + min(
-                    (neighbor_value as i8 - current_value as i8).rem_euclid(10),
-                    (current_value as i8 + 10 - neighbor_value as i8).rem_euclid(10)
+                    (neighbor_floor - current_floor).rem_euclid(10),
+                    (current_floor + 10 - neighbor_floor).rem_euclid(10)
                 )) as usize;
                 Some(State { time: state.time + time_cost, pos: neighbor_pos }) 
             })
-            .for_each(|next| q.push(Reverse(next)));
+            .for_each(|next| q.push(Reverse(next))); // push neighbor states to queue
     }
     unreachable!("Queue empty, but S never reached!");
 }
