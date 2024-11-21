@@ -1,7 +1,7 @@
 use std::{fmt::Display, ops::{Add, AddAssign, Div, Mul, Sub, SubAssign}};
 
 use itertools::Itertools;
-use num_traits::{One, PrimInt, Unsigned, Zero};
+use num_traits::{CheckedAdd, CheckedSub, One, PrimInt, Unsigned, Zero};
 
 use crate::cardinals::Cardinal;
 
@@ -17,6 +17,8 @@ pub struct Coord<T: Coordinate, const N: usize>([T; N]);
 
 pub type Coord2 = Coord<i64, 2>;
 pub type Coord3 = Coord<i64, 3>;
+pub type Coord2U = Coord<usize, 2>;
+pub type Coord3U = Coord<usize, 3>;
 
 impl<T: Coordinate, const N: usize>  Coord<T, N> {
     pub fn new(coordinates: [T; N]) -> Self {
@@ -39,22 +41,6 @@ impl<T: Coordinate, const N: usize>  Coord<T, N> {
             .unwrap() 
             .to_usize()
             .unwrap()
-    }
-
-    pub fn checked_add(&self, v: &Self) -> Option<Self> {
-        let mut sum = self.0;
-        for idx in 0usize..N {
-            sum[idx] = sum[idx].checked_add(&v.0[idx])?;
-        }
-        Some(Self(sum))
-    }
-
-    pub fn checked_sub(&self, v: &Self) -> Option<Self> {
-        let mut sum = self.0;
-        for idx in 0usize..N {
-            sum[idx] = sum[idx].checked_sub(&v.0[idx])?;
-        }
-        Some(Self(sum))
     }
 }
 
@@ -107,6 +93,19 @@ where
     }
 }
 
+impl<T, const N: usize> CheckedAdd for Coord<T, N> 
+where 
+    T: Coordinate + CheckedAdd,
+{
+    fn checked_add(&self, v: &Self) -> Option<Self> {
+        let mut sum = self.0;
+        for (a, b) in sum.iter_mut().zip(v.0.iter()) {
+            *a = a.checked_add(b)?
+        }
+        Some(Self(sum))
+    }
+}
+
 impl<T: Coordinate, const N: usize> Sub for Coord<T, N> {
     type Output = Self;
     
@@ -153,6 +152,19 @@ where
         for idx in 0usize..N {
             self.0[idx] = self.0[idx] - other
         }
+    }
+}
+
+impl<T, const N: usize> CheckedSub for Coord<T, N> 
+where 
+    T: Coordinate + CheckedSub,
+{   
+    fn checked_sub(&self, v: &Self) -> Option<Self> {
+        let mut diff = self.0;
+        for (a, b) in diff.iter_mut().zip(v.0.iter()) {
+            *a = a.checked_sub(b)?
+        }
+        Some(Self(diff))
     }
 }
 
