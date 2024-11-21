@@ -115,15 +115,15 @@ fn get_battlefield(input: &str) -> (Vec<Pos>, Vec<Ruins>) {
 fn missile_defense(input: &str) -> usize {
     let meteors: Vec<Pos> = input.get_numbers()
         .tuples::<(isize, isize)>()
-        .map(|coords| Pos::from(coords))
+        .map(Pos::from)
         .collect();
     meteors.iter()
         .map(|meteor| {
-            let chosen = (0..3)
+            
+            (0..3)
                 .filter_map(|catapult| intercept(catapult, meteor))
                 .min()
-                .unwrap();
-            chosen
+                .unwrap()
         })
         .sum()
 }
@@ -173,7 +173,7 @@ fn intercept(catapult: isize, meteor: &Pos) -> Option<usize> {
     // divide evenly that means that the projectile will not be y at x.
     // y also has to be lower than x, because otherwise the shot will never get high enough
     // to hit y at x
-    return if adjusted_x % 3 != 0 || y - catapult > x {
+    if adjusted_x % 3 != 0 || y - catapult > x {
         None
     } else {
         let power = adjusted_x / 3;
