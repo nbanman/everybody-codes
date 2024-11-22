@@ -27,7 +27,7 @@ impl<T: Coordinate, const N: usize>  Coord<T, N> {
 
     pub fn x(&self) -> T { self.0[0] }
 
-    pub fn manhattan_distance(&self, other: Self) -> usize {
+    pub fn manhattan_distance(&self, other: &Self) -> usize {
         self.0.iter()
             .zip(other.0.iter())
             .map(|(&a, &b)| {
@@ -202,6 +202,18 @@ impl<T: Coordinate, const N: usize> Display for Coord<T, N> {
     }
 }
 
+impl<T: Coordinate, const N: usize> PartialOrd for Coord<T, N> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(std::cmp::Ord::cmp(self, other))
+    }
+}
+
+impl<T: Coordinate, const N: usize> Ord for Coord<T, N> {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.0.cmp(&other.0)
+    }
+}
+
 impl<T: Coordinate+Unsigned, const N: usize>  Coord<T, N> {
     pub fn get_index(&self, dimensions: &[usize]) -> Option<usize> {
         let mut usized = Vec::with_capacity(N);
@@ -312,18 +324,6 @@ impl<T: Coordinate> Coord<T, 2> {
 impl<T: Coordinate> From<(T, T)> for Coord<T, 2> {
     fn from(value: (T, T)) -> Self {
         Self::new2d(value.0, value.1)
-    }
-}
-
-impl<T: Coordinate> PartialOrd for Coord<T, 2> {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(std::cmp::Ord::cmp(self, other))
-    }
-}
-
-impl<T: Coordinate> Ord for Coord<T, 2> {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.y().cmp(&other.y()).then_with(|| self.x().cmp(&other.x()))
     }
 }
 
