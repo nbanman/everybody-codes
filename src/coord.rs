@@ -362,7 +362,7 @@ fn unsigned_math_operations() {
     assert_eq!(Some(Coord::new2d(1, 1)), pos1.checked_sub(&pos2));
     assert_eq!(Coord::new2d(12, 42), pos1 * pos2);
     assert_eq!(Coord::new2d(1, 1), pos1 / pos2);
-    assert_eq!(2, pos1.manhattan_distance(pos2));
+    assert_eq!(2, pos1.manhattan_distance(&pos2));
     // unsigned 3d
     let pos1 = Coord::new3d(4usize, 7, 9);
     let pos2 = Coord::new3d(3usize, 6, 3);
@@ -372,7 +372,7 @@ fn unsigned_math_operations() {
     assert_eq!(Some(Coord::new3d(1, 1, 6)), pos1.checked_sub(&pos2));
     assert_eq!(Coord::new3d(12, 42, 27), pos1 * pos2);
     assert_eq!(Coord::new3d(1, 1, 3), pos1 / pos2);
-    assert_eq!(8, pos1.manhattan_distance(pos2));
+    assert_eq!(8, pos1.manhattan_distance(&pos2));
 }
 
 #[test]
@@ -386,7 +386,7 @@ fn signed_math_operations() {
     assert_eq!(Some(Coord::new2d(-7, 13)), pos1.checked_sub(&pos2));
     assert_eq!(Coord::new2d(-12, -42), pos1 * pos2);
     assert_eq!(Coord::new2d(-1, -1), pos1 / pos2);
-    assert_eq!(20, pos1.manhattan_distance(pos2));
+    assert_eq!(20, pos1.manhattan_distance(&pos2));
     // unsigned 3d
     let pos1 = Coord::new3d(-4isize, 7, -9);
     let pos2 = Coord::new3d(3isize, -6, 3);
@@ -396,5 +396,5 @@ fn signed_math_operations() {
     assert_eq!(Some(Coord::new3d(-7, 13, -12)), pos1.checked_sub(&pos2));
     assert_eq!(Coord::new3d(-12, -42, -27), pos1 * pos2);
     assert_eq!(Coord::new3d(-1, -1, -3), pos1 / pos2);
-    assert_eq!(32, pos1.manhattan_distance(pos2));
+    assert_eq!(32, pos1.manhattan_distance(&pos2));
 }
