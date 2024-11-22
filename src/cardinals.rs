@@ -50,7 +50,8 @@ impl Cardinal {
         match direction.to_ascii_uppercase() {
             'L' => Some(self.left()),
             'R' => Some(self.right()),
-            'F' => Some(self.flip()),
+            'F' => Some(self.straight()),
+            'B' => Some(self.flip()),
             _ => None,
         }
     }
