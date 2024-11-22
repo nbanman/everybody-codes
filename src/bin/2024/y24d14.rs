@@ -1,5 +1,6 @@
 use std::{collections::{HashSet, VecDeque}, sync::LazyLock};
 use everybody_codes::{coord::Coord3, inputs::get_inputs, stopwatch::{ReportDuration, Stopwatch}};
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 static MOVES: LazyLock<[Coord3; 6]> = LazyLock::new(|| [
     Coord3::new3d(1, 0, 0),
@@ -48,35 +49,47 @@ fn part3(input: &str) -> usize {
         .map(|segment| segment.y())
         .max()
         .unwrap() as usize;
+
+    let leaf_to_trunk: Vec<Vec<usize>> = leaves.par_iter()
+        .map(|leaf| {
+            let mut taps = 0;
+            let mut tap_distance = vec![0; height];
+            let mut q = VecDeque::new();
+            q.push_back((*leaf, 0));
+            let mut visited = HashSet::new();
+            while let Some((pos, weight)) = q.pop_front() {
+                if !visited.insert(pos) { continue; }
+                if pos.x() == 0 && pos.z() == 0 {
+                    tap_distance[(pos.y() - 1) as usize] = weight;
+                    taps += 1;
+                    if taps == height { 
+                        break; 
+                    }
+                }
+                MOVES.iter()
+                    .map(|dir| *dir + pos)
+                    .filter(|n_pos| !visited.contains(n_pos) && tree.contains(n_pos))
+                    .map(|n_pos| (n_pos, weight + 1))
+                    .for_each(|state| q.push_back(state))
+            }
+            tap_distance
+        })
+        .collect();
+
     let mut tap_points = vec![vec![0; leaves.len()]; height];
 
-    for (leaf_index, leaf) in leaves.iter().enumerate() {
-        let mut taps = 0;
-        let mut q = VecDeque::new();
-        q.push_back((*leaf, 0));
-        let mut visited = HashSet::new();
-        while let Some((pos, weight)) = q.pop_front() {
-            if !visited.insert(pos) { continue; }
-            if pos.x() == 0 && pos.z() == 0 {
-                tap_points[(pos.y() - 1) as usize][leaf_index] = weight;
-                taps += 1;
-                if taps == height { 
-                    break; 
-                }
-            }
-            let test: Vec<_> = MOVES.iter()
-                .map(|dir| *dir + pos)
-                .filter(|n_pos| !visited.contains(n_pos) && tree.contains(n_pos))
-                .map(|n_pos| (n_pos, weight + 1))
-                .collect();
-            test.iter().for_each(|&state| q.push_back(state));
+    for (leaf_index, trunk_counts) in leaf_to_trunk.iter().enumerate() {
+        for (trunk_index, &count) in trunk_counts.iter().enumerate() {
+            tap_points[trunk_index][leaf_index] = count;
         }
     }
-    tap_points.iter_mut()
+
+    tap_points.iter()
         .map(|distances| distances.iter().sum::<usize>())
         .filter(|&murkiness| murkiness != 0)
         .min()
         .unwrap()
+    
 }
 
 fn grow_branch<'a>(input: &'a str) -> impl Iterator<Item = Coord3> + 'a {
