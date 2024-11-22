@@ -44,6 +44,10 @@ impl <T: Hash + Eq + Clone> Indexer<T> {
         }
     }
 
+    pub fn contains(&self, value: &T) -> bool {
+        self.value_to_index.contains_key(value)
+    }
+
     pub fn value(self, index: usize) -> Option<T> {
         self.index_to_value.get(&index).cloned()
     }
