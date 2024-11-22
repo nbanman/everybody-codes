@@ -1,8 +1,15 @@
-use std::{cmp::Reverse, collections::{BinaryHeap, HashMap, HashSet, VecDeque}, sync::LazyLock};
+use std::{cmp::Reverse, collections::{BinaryHeap, HashMap, HashSet}, sync::LazyLock};
 
 use everybody_codes::{coord::Coord3, inputs::get_inputs, stopwatch::{ReportDuration, Stopwatch}};
-use itertools::Itertools;
 
+static MOVES: LazyLock<[Coord3; 6]> = LazyLock::new(|| [
+    Coord3::new3d(1, 0, 0),
+    Coord3::new3d(-1, 0, 0),
+    Coord3::new3d(0, 1, 0),
+    Coord3::new3d(0, -1, 0),
+    Coord3::new3d(0, 0, 1),
+    Coord3::new3d(0, 0, -1),
+]);
 fn main() {
     let mut stopwatch = Stopwatch::new();
     stopwatch.start();
@@ -42,50 +49,94 @@ fn part3(input: &str) -> usize {
         .map(|segment| segment.y())
         .max()
         .unwrap();
-    (1..=height)
-        .map(|y| {
-            let tap_spot = Coord3::new3d(0, y, 0);
-            leaves.iter()
-                .map(|leaf| distance(&tap_spot, leaf, &tree))
+    leaves.iter()
+        .map(|leaf| {
+            let mut cache = HashMap::new();
+            println!("\nFor {}:", leaf);
+            (0..=height)
+                .map(|y| {
+                    println!("\tFor {y}:");
+                    distance(Coord3::new3d(0, y, 0), leaf, &tree, &mut cache) 
+                })
                 .sum()
         })
         .min()
         .unwrap()
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
+struct State {
+    h: usize, 
+    g: usize, 
+    pos: Coord3, 
+    parent_index: usize
+}
+
 fn distance(
-    tap_spot: &Coord3, 
+    tap_spot: Coord3, 
     leaf: &Coord3, 
     tree:&HashSet<Coord3>, 
+    cache: &mut HashMap<Coord3, usize>
 ) -> usize {
     let mut q = BinaryHeap::new();
-    let start = (tap_spot.manhattan_distance(leaf), 0, *leaf);
+    let start = State {
+        h: tap_spot.manhattan_distance(leaf), 
+        g: 0, 
+        pos: tap_spot, 
+        parent_index: 0 
+    };
     let mut visited = HashSet::new();
+    let mut backtrack = Vec::new();
     q.push(Reverse(start));
     
-    let moves: LazyLock<[Coord3; 6]> = LazyLock::new(|| [
-        Coord3::new3d(1, 0, 0),
-        Coord3::new3d(-1, 0, 0),
-        Coord3::new3d(0, 1, 0),
-        Coord3::new3d(0, -1, 0),
-        Coord3::new3d(0, 0, 1),
-        Coord3::new3d(0, 0, -1),
-    ]);
-
-    while let Some(Reverse((f, g, pos))) = q.pop() {
-        if pos == *leaf {
-            return g
+    while let Some(Reverse(state)) = q.pop() {
+        if state.pos == *leaf { 
+            // unspool backtracking and update cache
+            println!("{:?}", state);
+            let mut parent: State = backtrack[state.parent_index];
+            loop {
+                println!("{:?}", parent);
+                if !cache.contains_key(&parent.pos) {
+                    println!("inserting {} into cache with f of {}", parent.pos, state.g - parent.g);
+                    cache.insert(parent.pos, state.g - parent.g);
+                }
+                if parent == backtrack[parent.parent_index] { break; }
+                parent = backtrack[parent.parent_index];
+            }
+            return state.g 
         }
-        if !visited.insert(pos) { continue; }
-        let neighbors = moves.iter()
-            .map(|&adjacent| pos + adjacent)
+        if !visited.insert(state.pos) { continue }
+        backtrack.push(state);
+        let current_index = backtrack.len() - 1;
+        if cache.contains_key(&state.pos) {
+            let end_g = state.g + cache[&state.pos];
+            let shortcut = State {
+                h: 0, 
+                g: end_g, 
+                pos: *leaf, 
+                parent_index: current_index
+            };
+            println!("cache hit at {}! Jumping to end with g of {end_g}", state.pos);
+            q.push(Reverse(shortcut));
+        } else {
+            let neighbors = MOVES.iter()
+            .map(|&adjacent| state.pos + adjacent)
             .filter(|neighbor| tree.contains(neighbor) && !visited.contains(neighbor));
-        for neighbor in neighbors {
-            // create state for neighbor
-            
+            for neighbor in neighbors {
+                // create state for neighbor
+                let h = neighbor.manhattan_distance(leaf);
+                let neighbor_g = state.g + 1;
+                let neighbor_state = State {
+                    h,
+                    g: neighbor_g,
+                    pos: neighbor,
+                    parent_index: current_index,
+                };
+                q.push(Reverse(neighbor_state));
+            }
         }
     }
-    todo!()
+    unreachable!("Queue drains before end found!");
 }
 
 
