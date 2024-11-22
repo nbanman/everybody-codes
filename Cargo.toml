@@ -10,6 +10,7 @@ debug = true
 itertools = "0.13.0"
 num-traits = "0.2.19"
 enum-ordinalize = "4.3.0"
+rayon = "1.10.0"
 
 [[bin]]
 name = "y24d01"
