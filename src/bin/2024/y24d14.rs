@@ -1,5 +1,4 @@
-use std::{cmp::Reverse, collections::{BinaryHeap, HashMap, HashSet}, sync::LazyLock};
-
+use std::{collections::{HashSet, VecDeque}, sync::LazyLock};
 use everybody_codes::{coord::Coord3, inputs::get_inputs, stopwatch::{ReportDuration, Stopwatch}};
 
 static MOVES: LazyLock<[Coord3; 6]> = LazyLock::new(|| [
@@ -48,97 +47,37 @@ fn part3(input: &str) -> usize {
     let height = tree.iter()
         .map(|segment| segment.y())
         .max()
-        .unwrap();
-    leaves.iter()
-        .map(|leaf| {
-            let mut cache = HashMap::new();
-            println!("\nFor {}:", leaf);
-            (0..=height)
-                .map(|y| {
-                    println!("\tFor {y}:");
-                    distance(Coord3::new3d(0, y, 0), leaf, &tree, &mut cache) 
-                })
-                .sum()
-        })
+        .unwrap() as usize;
+    let mut tap_points = vec![vec![0; leaves.len()]; height];
+
+    for (leaf_index, leaf) in leaves.iter().enumerate() {
+        let mut taps = 0;
+        let mut q = VecDeque::new();
+        q.push_back((*leaf, 0));
+        let mut visited = HashSet::new();
+        while let Some((pos, weight)) = q.pop_front() {
+            if !visited.insert(pos) { continue; }
+            if pos.x() == 0 && pos.z() == 0 {
+                tap_points[(pos.y() - 1) as usize][leaf_index] = weight;
+                taps += 1;
+                if taps == height { 
+                    break; 
+                }
+            }
+            let test: Vec<_> = MOVES.iter()
+                .map(|dir| *dir + pos)
+                .filter(|n_pos| !visited.contains(n_pos) && tree.contains(n_pos))
+                .map(|n_pos| (n_pos, weight + 1))
+                .collect();
+            test.iter().for_each(|&state| q.push_back(state));
+        }
+    }
+    tap_points.iter_mut()
+        .map(|distances| distances.iter().sum::<usize>())
+        .filter(|&murkiness| murkiness != 0)
         .min()
         .unwrap()
 }
-
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
-struct State {
-    h: usize, 
-    g: usize, 
-    pos: Coord3, 
-    parent_index: usize
-}
-
-fn distance(
-    tap_spot: Coord3, 
-    leaf: &Coord3, 
-    tree:&HashSet<Coord3>, 
-    cache: &mut HashMap<Coord3, usize>
-) -> usize {
-    let mut q = BinaryHeap::new();
-    let start = State {
-        h: tap_spot.manhattan_distance(leaf), 
-        g: 0, 
-        pos: tap_spot, 
-        parent_index: 0 
-    };
-    let mut visited = HashSet::new();
-    let mut backtrack = Vec::new();
-    q.push(Reverse(start));
-    
-    while let Some(Reverse(state)) = q.pop() {
-        if state.pos == *leaf { 
-            // unspool backtracking and update cache
-            println!("{:?}", state);
-            let mut parent: State = backtrack[state.parent_index];
-            loop {
-                println!("{:?}", parent);
-                if !cache.contains_key(&parent.pos) {
-                    println!("inserting {} into cache with f of {}", parent.pos, state.g - parent.g);
-                    cache.insert(parent.pos, state.g - parent.g);
-                }
-                if parent == backtrack[parent.parent_index] { break; }
-                parent = backtrack[parent.parent_index];
-            }
-            return state.g 
-        }
-        if !visited.insert(state.pos) { continue }
-        backtrack.push(state);
-        let current_index = backtrack.len() - 1;
-        if cache.contains_key(&state.pos) {
-            let end_g = state.g + cache[&state.pos];
-            let shortcut = State {
-                h: 0, 
-                g: end_g, 
-                pos: *leaf, 
-                parent_index: current_index
-            };
-            println!("cache hit at {}! Jumping to end with g of {end_g}", state.pos);
-            q.push(Reverse(shortcut));
-        } else {
-            let neighbors = MOVES.iter()
-            .map(|&adjacent| state.pos + adjacent)
-            .filter(|neighbor| tree.contains(neighbor) && !visited.contains(neighbor));
-            for neighbor in neighbors {
-                // create state for neighbor
-                let h = neighbor.manhattan_distance(leaf);
-                let neighbor_g = state.g + 1;
-                let neighbor_state = State {
-                    h,
-                    g: neighbor_g,
-                    pos: neighbor,
-                    parent_index: current_index,
-                };
-                q.push(Reverse(neighbor_state));
-            }
-        }
-    }
-    unreachable!("Queue drains before end found!");
-}
-
 
 fn grow_branch<'a>(input: &'a str) -> impl Iterator<Item = Coord3> + 'a {
     input   
