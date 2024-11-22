@@ -337,7 +337,7 @@ impl<T: Coordinate> Coord<T, 3> {
     }
 
     pub fn y(&self) -> T { self.0[1] }
-    pub fn z(&self) -> T { self.0[1] }
+    pub fn z(&self) -> T { self.0[2] }
 
     pub fn origin() -> Self {
         Self([T::default(); 3])
