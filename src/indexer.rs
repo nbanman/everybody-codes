@@ -1,15 +1,17 @@
 use std::{collections::HashMap, hash::Hash};
 
+use crate::coord::Coord2;
+
 #[derive(Clone, Default, Debug)]
 pub struct Indexer<T: Hash + Eq + Clone> {
     id: usize,
-    index_to_value: HashMap<usize, T>,
+    index_to_value: Vec<T>,
     value_to_index: HashMap<T, usize>,
 }
 
 impl <T: Hash + Eq + Clone> Indexer<T> {
     pub fn new() -> Self {
-        let index_to_value: HashMap<usize, T> = HashMap::new();
+        let index_to_value: Vec<T> = Vec::new();
         let value_to_index: HashMap<T, usize> = HashMap::new();
         Self {
             id: 0,
@@ -23,7 +25,7 @@ impl <T: Hash + Eq + Clone> Indexer<T> {
                 .or_insert_with(|| {
                     let value_id = self.id;
                     self.id += 1;
-                    self.index_to_value.insert(value_id, value.to_owned());
+                    self.index_to_value.push(value.to_owned());
                     value_id
                 })
     }
@@ -39,7 +41,7 @@ impl <T: Hash + Eq + Clone> Indexer<T> {
             let value_id = self.id;
             self.id += 1;
             self.value_to_index.insert(value.to_owned(), value_id);
-            self.index_to_value.insert(value_id, value.to_owned());
+            self.index_to_value.push(value.to_owned());
             Some(value_id)
         }
     }
@@ -49,30 +51,26 @@ impl <T: Hash + Eq + Clone> Indexer<T> {
     }
 
     pub fn value(&self, index: usize) -> Option<T> {
-        self.index_to_value.get(&index).cloned()
+        self.index_to_value.get(index).cloned()
     }
 
     pub fn len(&self) -> usize {
         self.index_to_value.len()
     }
+}
 
-    // pub fn remove_by_index(&mut self, index: usize) -> Option<T> {
-    //     let removal = self.index_to_value.remove(&index);
-    //     if let Some(value) = removal {
-    //         self.value_to_index.remove(&value);
-    //         Some(value)
-    //     } else {
-    //         None    
-    //     }
-    // }
-
-    // pub fn remove_by_value(&mut self, value: T) -> Option<usize> {
-    //     let removal = self.value_to_index.remove(&value);
-    //     if let Some(index) = removal {
-    //         self.index_to_value.remove(&index);
-    //         Some(index)
-    //     } else {
-    //         None    
-    //     }
-    // }
+#[test]
+fn basic_functionality() {
+    let mut indexer = Indexer::new();
+    let one_one = Coord2::new2d(1, 1);
+    let three_three = Coord2::new2d(3, 3);
+    assert_eq!(Some(0), indexer.assign(&one_one));
+    assert_eq!(None, indexer.assign(&one_one));
+    assert_eq!(Some(1), indexer.assign(&Coord2::origin()));
+    assert_eq!(true, indexer.contains(&one_one));
+    assert_eq!(false, indexer.contains(&three_three));
+    assert_eq!(Some(one_one), indexer.value(0));
+    assert_eq!(None, indexer.value(2));
+    assert_eq!(1, indexer.get_or_assign(&Coord2::origin()));
+    assert_eq!(2, indexer.get_or_assign(&three_three));
 }
