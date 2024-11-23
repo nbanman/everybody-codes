@@ -1,76 +1,72 @@
-use std::{collections::HashMap, hash::Hash};
+use std::hash::Hash;
 
-use crate::coord::Coord2;
+use indexmap::IndexSet;
 
 #[derive(Clone, Default, Debug)]
-pub struct Indexer<T: Hash + Eq + Clone> {
+pub struct Indexer<T: Hash + Eq> {
     id: usize,
-    index_to_value: Vec<T>,
-    value_to_index: HashMap<T, usize>,
+    values: IndexSet<T>
 }
 
-impl <T: Hash + Eq + Clone> Indexer<T> {
+impl <T: Hash + Eq> Indexer<T> {
     pub fn new() -> Self {
-        let index_to_value: Vec<T> = Vec::new();
-        let value_to_index: HashMap<T, usize> = HashMap::new();
-        Self {
-            id: 0,
-            index_to_value,
-            value_to_index,
-        }
+        let values = IndexSet::new();
+        Self { id: 0, values }
     }
 
-    pub fn get_or_assign(&mut self, value: &T) -> usize {
-        *self.value_to_index.entry(value.clone())
-                .or_insert_with(|| {
-                    let value_id = self.id;
-                    self.id += 1;
-                    self.index_to_value.push(value.to_owned());
-                    value_id
-                })
+    pub fn get_or_assign_index(&mut self, value: T) -> usize {
+        self.values.get_index_of(&value).unwrap_or_else(|| {
+            let value_id = self.id;
+            self.id += 1;
+            self.values.insert(value);
+            value_id
+        })
     }
 
-    pub fn get(&self, value: &T) -> Option<usize> {
-        self.value_to_index.get(value).copied()
+    pub fn get_index(&self, value: &T) -> Option<usize> {
+        self.values.get_index_of(value)
     }
 
-    pub fn assign(&mut self, value: &T) -> Option<usize> {
-        if self.value_to_index.contains_key(value) {
+    pub fn assign(&mut self, value: T) -> Option<usize> {
+        if self.values.contains(&value) {
             None
         } else {
             let value_id = self.id;
             self.id += 1;
-            self.value_to_index.insert(value.to_owned(), value_id);
-            self.index_to_value.push(value.to_owned());
+            self.values.insert(value);
             Some(value_id)
         }
     }
 
     pub fn contains(&self, value: &T) -> bool {
-        self.value_to_index.contains_key(value)
+        self.values.contains(value)
     }
 
-    pub fn value(&self, index: usize) -> Option<T> {
-        self.index_to_value.get(index).cloned()
+    pub fn get_value(&self, index: usize) -> Option<&T> {
+        self.values.get_index(index)
     }
 
     pub fn len(&self) -> usize {
-        self.index_to_value.len()
+        self.id
     }
 }
 
 #[test]
 fn basic_functionality() {
+    use crate::coord::Coord2;
     let mut indexer = Indexer::new();
     let one_one = Coord2::new2d(1, 1);
     let three_three = Coord2::new2d(3, 3);
-    assert_eq!(Some(0), indexer.assign(&one_one));
-    assert_eq!(None, indexer.assign(&one_one));
-    assert_eq!(Some(1), indexer.assign(&Coord2::origin()));
+    assert_eq!(Some(0), indexer.assign(one_one.clone()));
+    assert_eq!(None, indexer.assign(one_one.clone()));
+    assert_eq!(Some(1), indexer.assign(Coord2::origin()));
     assert_eq!(true, indexer.contains(&one_one));
     assert_eq!(false, indexer.contains(&three_three));
-    assert_eq!(Some(one_one), indexer.value(0));
-    assert_eq!(None, indexer.value(2));
-    assert_eq!(1, indexer.get_or_assign(&Coord2::origin()));
-    assert_eq!(2, indexer.get_or_assign(&three_three));
+    assert_eq!(Some(&one_one), indexer.get_value(0));
+    assert_eq!(None, indexer.get_value(2));
+    assert_eq!(Some(1), indexer.get_index(&Coord2::origin()));
+    assert_eq!(None, indexer.get_index(&Coord2::new2d(2, 2)));
+    assert_eq!(1, indexer.get_or_assign_index(Coord2::origin()));
+    assert_eq!(2, indexer.get_or_assign_index(three_three));
+    assert_eq!(3, indexer.len());
 }
