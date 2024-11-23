@@ -48,27 +48,31 @@ impl <T: Hash + Eq + Clone> Indexer<T> {
         self.value_to_index.contains_key(value)
     }
 
-    pub fn value(self, index: usize) -> Option<T> {
+    pub fn value(&self, index: usize) -> Option<T> {
         self.index_to_value.get(&index).cloned()
     }
 
-    pub fn remove_by_index(&mut self, index: usize) -> Option<T> {
-        let removal = self.index_to_value.remove(&index);
-        if let Some(value) = removal {
-            self.value_to_index.remove(&value);
-            Some(value)
-        } else {
-            None    
-        }
+    pub fn len(&self) -> usize {
+        self.index_to_value.len()
     }
 
-    pub fn remove_by_value(&mut self, value: T) -> Option<usize> {
-        let removal = self.value_to_index.remove(&value);
-        if let Some(index) = removal {
-            self.index_to_value.remove(&index);
-            Some(index)
-        } else {
-            None    
-        }
-    }
+    // pub fn remove_by_index(&mut self, index: usize) -> Option<T> {
+    //     let removal = self.index_to_value.remove(&index);
+    //     if let Some(value) = removal {
+    //         self.value_to_index.remove(&value);
+    //         Some(value)
+    //     } else {
+    //         None    
+    //     }
+    // }
+
+    // pub fn remove_by_value(&mut self, value: T) -> Option<usize> {
+    //     let removal = self.value_to_index.remove(&value);
+    //     if let Some(index) = removal {
+    //         self.index_to_value.remove(&index);
+    //         Some(index)
+    //     } else {
+    //         None    
+    //     }
+    // }
 }
