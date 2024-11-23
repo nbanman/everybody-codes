@@ -46,7 +46,7 @@ fn part2(forest: &str) -> usize {
         .collect();
     let mut herb_indexer = Indexer::new();
     for herb in herbs_in_forest.iter() {
-        herb_indexer.assign(herb);
+        herb_indexer.assign(*herb);
     }
     let mut q = VecDeque::new();
     let mut visited = HashSet::new();
@@ -68,7 +68,7 @@ fn part2(forest: &str) -> usize {
                 let mut neighbor_herbs = herbs.clone();
                 let terrain = forest[neighbor] as char;
                 if terrain.is_ascii_alphabetic() {
-                    let herb_index = herb_indexer.get(&terrain).unwrap();
+                    let herb_index = herb_indexer.get_index(&terrain).unwrap();
                     if !neighbor_herbs[herb_index] {
                         // println!("{terrain} reached in {} steps, pos: {}", steps + 1, Coord::new2d(neighbor % width, neighbor / width));
                         neighbor_herbs[herb_index] = true;
@@ -80,6 +80,10 @@ fn part2(forest: &str) -> usize {
     }
     
     unreachable!();
+}
+
+fn solve(forest: &str) -> usize {
+    3
 }
 
 #[test]

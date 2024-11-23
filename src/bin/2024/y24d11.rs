@@ -50,7 +50,7 @@ fn get_generations(input: &str, start: Option<&str>) -> Vec<Vec<usize>> {
 
     // If a "start" termite exists, give it ID 0.
     if let Some(start) = start {
-        indexer.assign(&start);
+        indexer.assign(start);
     }
 
     // Parse map using Vecs instead of a slow Hashmap, sorting the outer Vec by ID so that
@@ -58,9 +58,9 @@ fn get_generations(input: &str, start: Option<&str>) -> Vec<Vec<usize>> {
     input.lines()
         .map(|line| {
             let (prev, next) = line.split_once(':').unwrap();
-            let id = indexer.get_or_assign(&prev);
+            let id = indexer.get_or_assign_index(prev);
             let children: Vec<_> = next.split(',')
-                .map(|child| indexer.get_or_assign(&child))
+                .map(|child| indexer.get_or_assign_index(child))
                 .collect();
             (id, children)
         })
@@ -102,3 +102,9 @@ C:A"];
     assert_eq!(8, get_population(tests[0], 4, "A"));
     assert_eq!(268815, minmax_population(tests[1]));
 }
+
+    // Inputs loaded (43μs)
+    // 1. 42 (18μs)
+    // 2. 193253 (24μs)
+    // 3. 1308907399812 (2ms)
+    // Total: 2ms
