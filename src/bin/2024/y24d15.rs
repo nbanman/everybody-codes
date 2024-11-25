@@ -9,8 +9,8 @@ fn main() {
     stopwatch.start();
     let (input1, input2, input3) = get_inputs(24, 15);
     println!("Inputs loaded ({})", stopwatch.lap().report());
-    println!("1. {} ({})", part1(&input1), stopwatch.lap().report());
-    println!("2. {} ({})", part2(&input2), stopwatch.lap().report());
+    // println!("1. {} ({})", part1(&input1), stopwatch.lap().report());
+    // println!("2. {} ({})", part2(&input2), stopwatch.lap().report());
     println!("3. {} ({})", solve(&input3), stopwatch.lap().report());
     println!("Total: {}", stopwatch.stop().report());
 }
@@ -91,17 +91,25 @@ fn solve(forest: &str) -> usize {
         .flat_map(|m| [m.start() + 1, m.start() + 2])
         .collect();
 
-    let herbs_in_forest: Vec<HashSet<char>> = forest.chars().enumerate()
+    let grouper = forest.chars().enumerate()
         .filter(|(_, c)| c.is_ascii_alphabetic())
-        .chunk_by(|(idx, _)| (width - 1) / (idx % width))
-        .into_iter()
-        .map(|(_, group)| group.map(|(_, c)| c).collect())
-        .collect();
+        .chunk_by(|(idx, _)| {
+            let x = idx % width;
+            let bucket = (idx % width) / ((width - 1) / 3);
+            println!("idx: {idx}, x: {x}, bucket: {bucket}");
+            bucket
+        });
+
+        let herbs_in_forest: Vec<HashSet<char>> = grouper
+            .into_iter()
+            .map(|(_, group)| group.map(|(_, c)| c).collect())
+            .collect();
         
     let mut herb_indexer = Indexer::new();
-    for herb in herbs_in_forest.iter() {
+    for herb in herbs_in_forest.iter().flat_map(|section| section.iter()) {
         herb_indexer.assign(*herb);
     }
+    println!("hi");
     3
 }
 
