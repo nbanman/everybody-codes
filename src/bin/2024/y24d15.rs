@@ -1,6 +1,8 @@
 use std::collections::{HashSet, VecDeque};
 
 use everybody_codes::{indexer::Indexer, inputs::get_inputs, stopwatch::{ReportDuration, Stopwatch}};
+use itertools::Itertools;
+use lazy_regex::regex;
 
 fn main() {
     let mut stopwatch = Stopwatch::new();
@@ -9,7 +11,7 @@ fn main() {
     println!("Inputs loaded ({})", stopwatch.lap().report());
     println!("1. {} ({})", part1(&input1), stopwatch.lap().report());
     println!("2. {} ({})", part2(&input2), stopwatch.lap().report());
-    println!("3. {} ({})", part2(&input3), stopwatch.lap().report());
+    println!("3. {} ({})", solve(&input3), stopwatch.lap().report());
     println!("Total: {}", stopwatch.stop().report());
 }
 
@@ -83,6 +85,23 @@ fn part2(forest: &str) -> usize {
 }
 
 fn solve(forest: &str) -> usize {
+    let width = forest.find(|c| c == '\n').unwrap() + 1;
+    let start = forest.find(|c| c == '.').unwrap();
+    let gates: Vec<usize> = regex!(r"\w..\w").find_iter(forest)
+        .flat_map(|m| [m.start() + 1, m.start() + 2])
+        .collect();
+
+    let herbs_in_forest: Vec<HashSet<char>> = forest.chars().enumerate()
+        .filter(|(_, c)| c.is_ascii_alphabetic())
+        .chunk_by(|(idx, _)| (width - 1) / (idx % width))
+        .into_iter()
+        .map(|(_, group)| group.map(|(_, c)| c).collect())
+        .collect();
+        
+    let mut herb_indexer = Indexer::new();
+    for herb in herbs_in_forest.iter() {
+        herb_indexer.assign(*herb);
+    }
     3
 }
 
