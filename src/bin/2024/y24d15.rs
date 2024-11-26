@@ -32,7 +32,7 @@ fn solve(forest: &str) -> usize {
     ];
     println!("gates: {:?}, areas: {:?}", col_gates, columns);
     println!("forest len: {}", forest.len());
-    let partitions: Vec<RangeInclusive<usize>> = forest.lines().enumerate()
+    let rows: Vec<RangeInclusive<usize>> = forest.lines().enumerate()
         .filter(|(_, line)| {
             line.as_bytes().iter().filter(|&&c| c == b'#').count() > width * 10 / 12
         })
@@ -40,9 +40,11 @@ fn solve(forest: &str) -> usize {
         .tuple_windows()
         .map(|(top, bot)| top..=bot)
         .collect();
-    println!("partitions: {:?}", partitions);
+    println!("rows: {:?}", rows);
     let mut edges = HashMap::new();
-    for ((col, x_bound), y_bound) in columns.iter().enumerate().cartesian_product(partitions.iter()) {
+    for ((col, x_bound), (row, y_bound)) in columns.iter()
+        .enumerate()
+        .cartesian_product(rows.iter().enumerate()) {
         let top_left = y_bound.start() * width + x_bound.start() + 1; // +1 needed to remove "fake" gates in liminal areas
         let bot_left = y_bound.end() * width + x_bound.start() + 1;
         let top_gates: HashSet<usize> = (top_left..top_left + x_bound.count() - 2) // -2 needed to remove "fake" gates in liminal areas
@@ -72,9 +74,73 @@ fn solve(forest: &str) -> usize {
             &top_gates
         };
 
+        // determine what kind of partition we are in to set the state up properly
+        let gate_status = if row == 0 {
+            if col == 1 {
+                GateStatus::One
+            } else {
+                GateStatus::Visited
+            }
+        } else if row == 4 && col == 1 {
+            GateStatus::Two(None)
+        } else {
+            GateStatus::One
+        };
+
+        let forest = forest.as_bytes();
+
         for start_gate in start_gates {
             let mut q = VecDeque::new();
+            let state = State {
+                pos: *start_gate,
+                herb: false,
+                gate_status,
+                return_gate: None,
+            };
+            q.push_back((0, state));
+            let mut visited = HashSet::new();
+            while let Some((steps, State {  
+                pos,
+                herb, 
+                gate_status, 
+                return_gate
+            })) = q.pop_front() {
+                let steps = steps + 1;
+                let mut herb = herb;
+                let mut gate_status = gate_status;
+                let mut return_gate = return_gate;
+                if end_gates.contains(&pos) {
+                    match gate_status {
+                        GateStatus::One => {
+                            gate_status = GateStatus::Visited;
+                            
+                        },
+                        GateStatus::Two(None) => GateStatus::Two(Some(pos)),
+                        GateStatus::Two(Some(gate1)) => {
+                            if pos == gate1 { 
+                                continue; 
+                            } else {
+                                GateStatus::Visited
+                            }
+                        },
+                        GateStatus::Visited => { continue; },
+                    };
 
+                    // somewhere in here I need to do the warp thing where a bunch of neighbors for
+                    // each end_gate are created. I think I should make them here and then continue
+
+                    continue;
+                } else if start_gates.contains(&pos) {
+                    unimplemented!();
+                    // this is where i would start adding edges to the cache
+                    continue
+                }
+                
+                if forest[pos].is_ascii_alphabetic() && !herb {
+                    herb = true;
+                }
+
+                // make normal neighbors here 
         }
 
     }
@@ -82,12 +148,19 @@ fn solve(forest: &str) -> usize {
     3
 }
 
-#[derive(Clone, Debug, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 struct State {
-    steps: usize,
+    pos: usize,
     herb: bool,
     gate_status: GateStatus,
-    return_gate: ,
+    return_gate: Option<usize>, // strongly consider rolling this info up into a GateStatus enum variant
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+enum GateStatus {
+    Visited,
+    Two(Option<usize>),
+    One,
 }
 
 
