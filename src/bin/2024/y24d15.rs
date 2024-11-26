@@ -42,28 +42,55 @@ fn solve(forest: &str) -> usize {
         .collect();
     println!("partitions: {:?}", partitions);
     let mut edges = HashMap::new();
-    for (x_bound, y_bound) in columns.iter().cartesian_product(partitions.iter()) {
-        let start = y_bound.start() * width + x_bound.start();
-        let end = y_bound.end() * width + x_bound.start();
-        let top_gates: HashSet<char> = forest[start..start + x_bound.count()]
-            .chars()
-            .filter(|c| *c == '.')
+    for ((col, x_bound), y_bound) in columns.iter().enumerate().cartesian_product(partitions.iter()) {
+        let top_left = y_bound.start() * width + x_bound.start() + 1; // +1 needed to remove "fake" gates in liminal areas
+        let bot_left = y_bound.end() * width + x_bound.start() + 1;
+        let top_gates: HashSet<usize> = (top_left..top_left + x_bound.count() - 2) // -2 needed to remove "fake" gates in liminal areas
+            .filter(|&idx| forest.as_bytes()[idx] == b'.')
             .collect(); 
-        let bot_gates: HashSet<char> = forest[end..end + x_bound.count()]
-            .chars()
-            .filter(|c| *c == '.')
+        let bot_gates: HashSet<usize> = (bot_left..bot_left + x_bound.count() - 2)
+            .filter(|&idx| forest.as_bytes()[idx] == b'.')
             .collect(); 
+
+        let bot_gates = if bot_gates.is_empty() {
+            let mut bot_gates = HashSet::new();
+            if col < 2 { bot_gates.insert(col_gates[0]); }
+            if col > 0 { bot_gates.insert(col_gates[1]); }
+            bot_gates
+        } else { 
+            bot_gates
+        };
         
+        let start_gates = if col == 1 {
+            &top_gates
+        } else {
+            &bot_gates
+        };
+        let end_gates = if col == 1 {
+            &bot_gates
+        } else {
+            &top_gates
+        };
+
+        for start_gate in start_gates {
+            let mut q = VecDeque::new();
+
+        }
 
     }
         
     3
 }
 
+#[derive(Clone, Debug, Eq, Hash)]
 struct State {
     steps: usize,
-
+    herb: bool,
+    gate_status: GateStatus,
+    return_gate: ,
 }
+
+
 
 #[allow(unused)]
 fn to_coord(pos: usize, width: usize) -> Coord<usize, 2> {
