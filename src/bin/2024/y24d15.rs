@@ -1,6 +1,6 @@
-use std::collections::{HashSet, VecDeque};
+use std::{borrow::Borrow, collections::{HashMap, HashSet, VecDeque}, ops::RangeInclusive};
 
-use everybody_codes::{indexer::Indexer, inputs::get_inputs, stopwatch::{ReportDuration, Stopwatch}};
+use everybody_codes::{coord::Coord, indexer::Indexer, inputs::get_inputs, stopwatch::{ReportDuration, Stopwatch}};
 use itertools::Itertools;
 use lazy_regex::regex;
 
@@ -15,6 +15,64 @@ fn main() {
     println!("Total: {}", stopwatch.stop().report());
 }
 
+fn solve(forest: &str) -> usize {
+    let width = forest.find(|c| c == '\n').unwrap() + 1;
+    let height = (forest.len() + 1) / width;
+    let start = forest.find(|c| c == '.').unwrap();
+    let col_gates: Vec<usize> = regex!(r"\w..\w").find_iter(forest)
+        .map(|m| m.start() + 2)
+        .collect();
+    let col_gate_widths: Vec<usize> = col_gates.iter()
+        .map(|&gate| gate % width)
+        .collect();
+    let columns = vec![
+        (0..=col_gate_widths[0]), 
+        (col_gate_widths[0]..=col_gate_widths[1]), 
+        (col_gate_widths[1]..=width - 2)
+    ];
+    println!("gates: {:?}, areas: {:?}", col_gates, columns);
+    println!("forest len: {}", forest.len());
+    let partitions: Vec<RangeInclusive<usize>> = forest.lines().enumerate()
+        .filter(|(_, line)| {
+            line.as_bytes().iter().filter(|&&c| c == b'#').count() > width * 10 / 12
+        })
+        .map(|(idx, _)| idx)
+        .tuple_windows()
+        .map(|(top, bot)| top..=bot)
+        .collect();
+    println!("partitions: {:?}", partitions);
+    let mut edges = HashMap::new();
+    for (x_bound, y_bound) in columns.iter().cartesian_product(partitions.iter()) {
+        let start = y_bound.start() * width + x_bound.start();
+        let end = y_bound.end() * width + x_bound.start();
+        let top_gates: HashSet<char> = forest[start..start + x_bound.count()]
+            .chars()
+            .filter(|c| *c == '.')
+            .collect(); 
+        let bot_gates: HashSet<char> = forest[end..end + x_bound.count()]
+            .chars()
+            .filter(|c| *c == '.')
+            .collect(); 
+        
+
+    }
+        
+    3
+}
+
+struct State {
+    steps: usize,
+
+}
+
+#[allow(unused)]
+fn to_coord(pos: usize, width: usize) -> Coord<usize, 2> {
+    let x = pos % width;
+    let y = pos / width;
+    Coord::new2d(x, y)
+}
+
+#[allow(unused)]
 fn part1(forest: &str) -> usize {
     let width = forest.find(|c| c == '\n').unwrap() + 1;
     let start = forest.find(|c| c == '.').unwrap();
@@ -40,6 +98,7 @@ fn part1(forest: &str) -> usize {
     unreachable!("Queue drained before herb found!");
 }
 
+#[allow(unused)]
 fn part2(forest: &str) -> usize {
     let width = forest.find(|c| c == '\n').unwrap() + 1;
     let start = forest.find(|c| c == '.').unwrap();
@@ -82,35 +141,6 @@ fn part2(forest: &str) -> usize {
     }
     
     unreachable!();
-}
-
-fn solve(forest: &str) -> usize {
-    let width = forest.find(|c| c == '\n').unwrap() + 1;
-    let start = forest.find(|c| c == '.').unwrap();
-    let gates: Vec<usize> = regex!(r"\w..\w").find_iter(forest)
-        .flat_map(|m| [m.start() + 1, m.start() + 2])
-        .collect();
-
-    let grouper = forest.chars().enumerate()
-        .filter(|(_, c)| c.is_ascii_alphabetic())
-        .chunk_by(|(idx, _)| {
-            let x = idx % width;
-            let bucket = (idx % width) / ((width - 1) / 3);
-            println!("idx: {idx}, x: {x}, bucket: {bucket}");
-            bucket
-        });
-
-        let herbs_in_forest: Vec<HashSet<char>> = grouper
-            .into_iter()
-            .map(|(_, group)| group.map(|(_, c)| c).collect())
-            .collect();
-        
-    let mut herb_indexer = Indexer::new();
-    for herb in herbs_in_forest.iter().flat_map(|section| section.iter()) {
-        herb_indexer.assign(*herb);
-    }
-    println!("hi");
-    3
 }
 
 #[test]
