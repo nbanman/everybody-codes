@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, collections::{HashMap, HashSet, VecDeque}, ops::RangeInclusive};
+use std::{cmp::{max, min}, collections::{HashMap, HashSet, VecDeque}, ops::RangeInclusive};
 
 use everybody_codes::{coord::Coord, indexer::Indexer, inputs::get_inputs, stopwatch::{ReportDuration, Stopwatch}};
 use itertools::Itertools;
@@ -15,7 +15,136 @@ fn main() {
     println!("Total: {}", stopwatch.stop().report());
 }
 
-fn solve(forest: &str) -> usize {
+fn solve(input: &str) -> usize {
+    let forest = Forest::new(input).expect("Invalid input!");
+    println!("columns: {:?}, rows: {:?}", forest.columns, forest.rows);
+    let graph: HashMap<Vertex, Vec<Edge>> = get_graph(&forest);
+    3
+}
+
+fn get_graph(forest: &Forest<'_>) -> HashMap<Vertex, Vec<Edge>> {
+    let adjacent = vec![-(forest.width as isize), 1, forest.width as isize, -1];
+
+    for ((col, x_bound), (row, y_bound)) in forest.columns.iter()
+        .enumerate()
+        .cartesian_product(forest.rows.iter().enumerate()) {
+        
+        let (start_gates, end_gates, top_gates, bot_gates) = get_gates();
+    }
+    HashMap::new()
+}
+
+fn get_gates(
+    forest: &Forest<'_>,
+    x_bound: &RangeInclusive<usize>,
+    y_bound: &RangeInclusive<usize>,
+) -> (_, _, _, _) {
+    let top_left = y_bound.start() * forest.width + x_bound.start() + 1; // +1 needed to remove "fake" gates in liminal areas
+    let bot_left = y_bound.end() * forest.width + x_bound.start() + 1;
+    let top_gates: HashSet<usize> = (top_left..top_left + x_bound.clone().count() - 2) // -2 needed to remove "fake" gates in liminal areas
+        .filter(|&idx| forest.features.as_bytes()[idx] == b'.')
+        .collect(); 
+    let bot_gates: HashSet<usize> = (bot_left..bot_left + &x_bound.clone().count() - 2)
+        .filter(|&idx| forest.features.as_bytes()[idx] == b'.')
+        .collect(); 
+
+    let bot_gates = if bot_gates.is_empty() {
+        let mut bot_gates = HashSet::new();
+        if col < 2 { bot_gates.insert(bottom_gates[0]); }
+        if col > 0 { bot_gates.insert(bottom_gates[1]); }
+        bot_gates
+    } else { 
+        bot_gates
+    };
+    
+    let start_gates = if col == 1 {
+        &top_gates
+    } else {
+        &bot_gates
+    };
+    let end_gates = if col == 1 {
+        &bot_gates
+    } else {
+        &top_gates
+    };
+
+}
+
+#[derive(Copy, Clone, Debug)]
+struct Vertex {
+    pub go_from: usize,
+    pub return_to: usize,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct Edge {
+    pub weight: usize,
+    pub go_to: usize,
+    pub return_from: usize,
+}
+
+#[derive(Debug)]
+struct Forest<'a> {
+    pub features: &'a str,
+    pub width: usize,
+    pub start: usize,
+    pub bottom_gates: Vec<usize>,
+    pub columns: Vec<RangeInclusive<usize>>, 
+    pub rows: Vec<RangeInclusive<usize>>,
+}
+
+impl<'a> Forest<'a> {
+    pub fn new(features: &'a str) -> Option<Self> {
+        let width = features.find(|c| c == '\n')? + 1;
+        let start = features.find(|c| c == '.')?;
+
+        // columns. Hard-coded as three
+        let bottom_gates: Vec<usize> = regex!(r"\w..\w").find_iter(features)
+            .map(|m| m.start() + 2)
+            .collect();
+        let bottom_gate_widths: Vec<usize> = bottom_gates.iter()
+            .map(|&gate| gate % width)
+            .collect();
+        let columns: Vec<RangeInclusive<usize>> = vec![
+            (0..=bottom_gate_widths[0]), 
+            (bottom_gate_widths[0]..=bottom_gate_widths[1]), 
+            (bottom_gate_widths[1]..=width - 2)
+        ];
+
+        // find "rows," which are delimited by narrow openings following an herb
+
+        // first find what lines the herbs are
+        let lines: Vec<(usize, &str)> = features.lines().enumerate().collect();
+
+        let herb_lines: Vec<usize> = lines.iter()
+            .filter(|(_, line)| line.as_bytes().iter().any(|c| c.is_ascii_alphabetic()))
+            .map(|(idx, _)| *idx)
+            .collect();
+
+        let delimiters: Vec<usize> = herb_lines.iter()
+            .map(|herb_line| {
+                lines[*herb_line + 1..].iter().find(|(_, line)| {
+                    line.as_bytes().iter().filter(|&&c| c == b'#').count() > width * 10 / 12
+                }).unwrap().0
+            })
+            .dedup()
+            .collect();
+
+        let mut rows: Vec<usize> = Vec::with_capacity(delimiters.len() + 2);
+        rows.push(0);
+        rows.extend_from_slice(&delimiters);
+
+        let rows: Vec<RangeInclusive<usize>> = rows.into_iter()
+            .tuple_windows()
+            .map(|(top, bot)| top..=bot)
+            .collect();
+
+        Some(Self { features, width, start, bottom_gates, columns, rows, })
+    }
+}
+
+#[allow(unused)]
+fn old_solve(forest: &str) -> usize {
     let width = forest.find(|c| c == '\n').unwrap() + 1;
     let height = (forest.len() + 1) / width;
     let start = forest.find(|c| c == '.').unwrap();
@@ -42,15 +171,16 @@ fn solve(forest: &str) -> usize {
         .collect();
     println!("rows: {:?}", rows);
     let mut edges = HashMap::new();
+    let adjacent = vec![-(width as isize), 1, width as isize, -1];
     for ((col, x_bound), (row, y_bound)) in columns.iter()
         .enumerate()
         .cartesian_product(rows.iter().enumerate()) {
         let top_left = y_bound.start() * width + x_bound.start() + 1; // +1 needed to remove "fake" gates in liminal areas
         let bot_left = y_bound.end() * width + x_bound.start() + 1;
-        let top_gates: HashSet<usize> = (top_left..top_left + x_bound.count() - 2) // -2 needed to remove "fake" gates in liminal areas
+        let top_gates: HashSet<usize> = (top_left..top_left + x_bound.clone().count() - 2) // -2 needed to remove "fake" gates in liminal areas
             .filter(|&idx| forest.as_bytes()[idx] == b'.')
             .collect(); 
-        let bot_gates: HashSet<usize> = (bot_left..bot_left + x_bound.count() - 2)
+        let bot_gates: HashSet<usize> = (bot_left..bot_left + &x_bound.clone().count() - 2)
             .filter(|&idx| forest.as_bytes()[idx] == b'.')
             .collect(); 
 
@@ -79,7 +209,7 @@ fn solve(forest: &str) -> usize {
             if col == 1 {
                 GateStatus::One
             } else {
-                GateStatus::Visited
+                GateStatus::Zero
             }
         } else if row == 4 && col == 1 {
             GateStatus::Two(None)
@@ -89,158 +219,132 @@ fn solve(forest: &str) -> usize {
 
         let forest = forest.as_bytes();
 
+        let mut visited = HashMap::new();
+
         for start_gate in start_gates {
             let mut q = VecDeque::new();
             let state = State {
                 pos: *start_gate,
                 herb: false,
                 gate_status,
-                return_gate: None,
             };
             q.push_back((0, state));
-            let mut visited = HashSet::new();
-            while let Some((steps, State {  
-                pos,
-                herb, 
-                gate_status, 
-                return_gate
-            })) = q.pop_front() {
-                let steps = steps + 1;
-                let mut herb = herb;
-                let mut gate_status = gate_status;
-                let mut return_gate = return_gate;
-                if end_gates.contains(&pos) {
-                    match gate_status {
-                        GateStatus::One => {
-                            gate_status = GateStatus::Visited;
-                            
-                        },
-                        GateStatus::Two(None) => GateStatus::Two(Some(pos)),
-                        GateStatus::Two(Some(gate1)) => {
-                            if pos == gate1 { 
-                                continue; 
+            let mut herb_edges_remaining = start_gates.len() * max(1, end_gates.len());
+
+            while let Some((steps, state)) = q.pop_front() {                
+                visited.insert((*start_gate, state), steps);
+                if end_gates.contains(&state.pos) {
+                    if state.herb || row == 3 {
+                        herb_edges_remaining -= 1;
+                        if herb_edges_remaining == 0 {
+                            break;
+                        }
+                    }
+                } else if state.gate_status == GateStatus::Zero && forest[state.pos].is_ascii_alphabetic() {
+                    herb_edges_remaining -= 1;
+                    if herb_edges_remaining == 0 {
+                        break;
+                    }
+                }
+
+                adjacent.iter()
+                    .filter_map(|&adj| {
+                        let neighbor_pos = usize::try_from((state.pos as isize) + adj).ok()?;
+                        if forest[neighbor_pos] == b'#' { return None; }
+                        let neighbor_gate_status = if end_gates.contains(&neighbor_pos) {
+                            if let GateStatus::Two(None) = state.gate_status {
+                                GateStatus::Two(Some(neighbor_pos))
                             } else {
-                                GateStatus::Visited
+                                state.gate_status
                             }
-                        },
-                        GateStatus::Visited => { continue; },
-                    };
-
-                    // somewhere in here I need to do the warp thing where a bunch of neighbors for
-                    // each end_gate are created. I think I should make them here and then continue
-
-                    continue;
-                } else if start_gates.contains(&pos) {
-                    unimplemented!();
-                    // this is where i would start adding edges to the cache
-                    continue
-                }
-                
-                if forest[pos].is_ascii_alphabetic() && !herb {
-                    herb = true;
-                }
-
-                // make normal neighbors here 
+                        } else {
+                            state.gate_status
+                        };
+                        let neighbor_herb = if !state.herb && forest[neighbor_pos].is_ascii_alphabetic() {
+                            true
+                        } else {
+                            state.herb
+                        };
+                        let neighbor_state = State {
+                            pos: neighbor_pos,
+                            herb: neighbor_herb,
+                            gate_status: neighbor_gate_status,
+                        };
+                        if visited.contains_key(&(*start_gate, neighbor_state)) {
+                            None
+                        } else {
+                            Some(neighbor_state)
+                        }
+                    })
+                    .for_each(|neighbor_state| {
+                        q.push_back((steps + 1, neighbor_state));
+                    });
+            }
         }
+         // make edges
+         let paths: HashMap<(usize, Option<usize>), Vec<((usize, State), i32)>> = visited.into_iter()
+            .filter(|&((_, State { pos, herb: _, gate_status: _ }), _)| {
+                end_gates.contains(&pos) || (row == 0 && col != 1 && forest[pos].is_ascii_alphabetic())
+            })
+            // .sorted_unstable_by_key(|&((start_gate, state), _)| (start_gate, state.pos))  
+            .into_group_map_by(|&((start_gate, state), _)| {
+                if row == 0 && col != 1 {
+                    (start_gate, None)
+                } else {
+                    (start_gate, Some(state.pos))
+                }
+            });
 
+        if row == 0 && col != 1 {
+            let combos = start_gates.iter().cartesian_product(start_gates.iter());
+            for (&go_from, &return_from) in combos {
+                let steps = paths[&(go_from, None)].first().unwrap().1 
+                    + paths[&(return_from, None)].first().unwrap().1;
+                // need to know from, to, return, steps
+                edges.entry((go_from, return_from))
+                    .or_insert(Vec::new())
+                    .push((steps, None));
+            }
+
+        } else {
+            let combos = start_gates.iter()
+                .cartesian_product(end_gates.iter())
+                .cartesian_product(end_gates.iter())
+                .cartesian_product(start_gates.iter());
+            for (((&go_from, &go_to), &return_from), &return_to) in combos {
+                let paths_go = paths[&(go_from, Some(go_to))].clone();
+                let (paths_go_short, paths_go_long) = paths_go.iter()
+                    .sorted_unstable_by_key(|(_, steps)| steps)
+                    .collect_tuple()
+                    .unwrap();
+                let paths_return = paths[&(return_to, Some(return_from))].clone();
+                let (paths_return_short, paths_return_long) = paths_return.iter()
+                    .sorted_unstable_by_key(|(_, steps)| steps)
+                    .collect_tuple()
+                    .unwrap();
+                let steps = min(paths_go_short.1 + paths_return_long.1, paths_go_long.1 + paths_return_short.1);
+                // need to know from, to, return, steps
+                edges.entry((go_from, return_from))
+                    .or_insert(Vec::new())
+                    .push((steps, Some(go_to)));
+            }
+        }
     }
-        
     3
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 struct State {
     pos: usize,
     herb: bool,
     gate_status: GateStatus,
-    return_gate: Option<usize>, // strongly consider rolling this info up into a GateStatus enum variant
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 enum GateStatus {
-    Visited,
-    Two(Option<usize>),
+    Zero,
     One,
-}
-
-
-
-#[allow(unused)]
-fn to_coord(pos: usize, width: usize) -> Coord<usize, 2> {
-    let x = pos % width;
-    let y = pos / width;
-    Coord::new2d(x, y)
-}
-
-#[allow(unused)]
-fn part1(forest: &str) -> usize {
-    let width = forest.find(|c| c == '\n').unwrap() + 1;
-    let start = forest.find(|c| c == '.').unwrap();
-    let mut q = VecDeque::new();
-    let mut visited = HashSet::new();
-    let forest = forest.as_bytes();
-    let adjacent = vec![-(width as isize), 1, width as isize, -1];
-
-    q.push_back((0, start));
-    while let Some((steps, pos)) = q.pop_front() {
-        if !visited.insert(pos) { continue; }
-        if forest[pos] == b'H' { 
-            return steps * 2
-        }
-        adjacent.iter()
-            .filter_map(|&adj| usize::try_from((pos as isize) + adj).ok() )
-            .filter(|neighbor| {
-                !visited.contains(neighbor) && forest[*neighbor] != b'#'
-            })
-            .map(|neighbor| (steps + 1, neighbor))
-            .for_each(|neighbor_state| q.push_back(neighbor_state));
-    }
-    unreachable!("Queue drained before herb found!");
-}
-
-#[allow(unused)]
-fn part2(forest: &str) -> usize {
-    let width = forest.find(|c| c == '\n').unwrap() + 1;
-    let start = forest.find(|c| c == '.').unwrap();
-    let herbs_in_forest: HashSet<char> = forest.chars()
-        .filter(char::is_ascii_alphabetic)
-        .collect();
-    let mut herb_indexer = Indexer::new();
-    for herb in herbs_in_forest.iter() {
-        herb_indexer.assign(*herb);
-    }
-    let mut q = VecDeque::new();
-    let mut visited = HashSet::new();
-    let forest = forest.as_bytes();
-    let adjacent = vec![-(width as isize), 1, width as isize, -1];
-    
-    q.push_back((0, start, vec![false; herb_indexer.len()]));
-    while let Some((steps, pos, herbs)) = q.pop_front() {
-        if !visited.insert((pos, herbs.clone())) { continue; }
-        if herbs.iter().all(|&herb| herb) && pos == start {
-            return steps
-        }
-        adjacent.iter()
-            .filter_map(|&adj| usize::try_from((pos as isize) + adj).ok() )
-            .filter(|neighbor| {
-                !visited.contains(&(*neighbor, herbs.clone())) && forest[*neighbor] != b'#' && forest[*neighbor] != b'~'
-            })
-            .map(|neighbor| {
-                let mut neighbor_herbs = herbs.clone();
-                let terrain = forest[neighbor] as char;
-                if terrain.is_ascii_alphabetic() {
-                    let herb_index = herb_indexer.get_index(&terrain).unwrap();
-                    if !neighbor_herbs[herb_index] {
-                        // println!("{terrain} reached in {} steps, pos: {}", steps + 1, Coord::new2d(neighbor % width, neighbor / width));
-                        neighbor_herbs[herb_index] = true;
-                    }
-                }
-                (steps + 1, neighbor, neighbor_herbs) 
-            })
-            .for_each(|neighbor_state| q.push_back(neighbor_state));
-    }
-    
-    unreachable!();
+    Two(Option<usize>),
 }
 
 #[test]
