@@ -29,7 +29,8 @@ fn get_graph(forest: &Forest<'_>) -> HashMap<Vertex, Vec<Edge>> {
         .enumerate()
         .cartesian_product(forest.rows.iter().enumerate()) {
         
-        let (start_gates, end_gates, top_gates, bot_gates) = get_gates();
+        let (top_gates, bot_gates) = get_gates(forest, x_bound, y_bound, col);
+        println!("col: {}, row: {}, top gates: {:?}, bot gates: {:?}", col, row, top_gates, bot_gates);
     }
     HashMap::new()
 }
@@ -38,7 +39,8 @@ fn get_gates(
     forest: &Forest<'_>,
     x_bound: &RangeInclusive<usize>,
     y_bound: &RangeInclusive<usize>,
-) -> (_, _, _, _) {
+    col: usize,
+) -> (HashSet<usize>, HashSet<usize>) {
     let top_left = y_bound.start() * forest.width + x_bound.start() + 1; // +1 needed to remove "fake" gates in liminal areas
     let bot_left = y_bound.end() * forest.width + x_bound.start() + 1;
     let top_gates: HashSet<usize> = (top_left..top_left + x_bound.clone().count() - 2) // -2 needed to remove "fake" gates in liminal areas
@@ -50,24 +52,13 @@ fn get_gates(
 
     let bot_gates = if bot_gates.is_empty() {
         let mut bot_gates = HashSet::new();
-        if col < 2 { bot_gates.insert(bottom_gates[0]); }
-        if col > 0 { bot_gates.insert(bottom_gates[1]); }
+        if col < 2 { bot_gates.insert(forest.bottom_gates[0]); }
+        if col > 0 { bot_gates.insert(forest.bottom_gates[1]); }
         bot_gates
     } else { 
         bot_gates
     };
-    
-    let start_gates = if col == 1 {
-        &top_gates
-    } else {
-        &bot_gates
-    };
-    let end_gates = if col == 1 {
-        &bot_gates
-    } else {
-        &top_gates
-    };
-
+    (top_gates, bot_gates)
 }
 
 #[derive(Copy, Clone, Debug)]
